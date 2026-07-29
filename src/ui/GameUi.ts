@@ -1,0 +1,55 @@
+import { BuildPanel } from "./BuildPanel.js";
+import type { CommandDispatcher, StateReader, UiSelectors } from "./contracts.js";
+import { selectUiView } from "./contracts.js";
+import { element } from "./dom.js";
+import { GameOverlays } from "./GameOverlays.js";
+import { Hud } from "./Hud.js";
+import { SelectedTowerPanel } from "./SelectedTowerPanel.js";
+
+/** Mounts selector-driven UI and contains the state subscription lifecycle. */
+export class GameUi<State> {
+  readonly element = element("div", "game-ui");
+  readonly #hud: Hud;
+  readonly #buildPanel: BuildPanel;
+  readonly #towerPanel: SelectedTowerPanel;
+  readonly #overlays: GameOverlays;
+  readonly #reader: StateReader<State>;
+  readonly #selectors: UiSelectors<State>;
+  #unsubscribe: (() => void) | null = null;
+
+  constructor(reader: StateReader<State>, selectors: UiSelectors<State>, dispatch: CommandDispatcher) {
+    this.#reader = reader;
+    this.#selectors = selectors;
+    this.#hud = new Hud(dispatch);
+    this.#buildPanel = new BuildPanel(dispatch);
+    this.#towerPanel = new SelectedTowerPanel(dispatch);
+    this.#overlays = new GameOverlays(dispatch);
+    this.element.append(
+      this.#hud.element,
+      this.#buildPanel.element,
+      this.#towerPanel.element,
+      this.#overlays.element,
+    );
+  }
+
+  mount(parent: HTMLElement): void {
+    if (this.#unsubscribe) return;
+    parent.append(this.element);
+    this.#unsubscribe = this.#reader.subscribe(() => this.render());
+    this.render();
+  }
+
+  unmount(): void {
+    this.#unsubscribe?.();
+    this.#unsubscribe = null;
+    this.element.remove();
+  }
+
+  render(): void {
+    const view = selectUiView(this.#reader.getState(), this.#selectors);
+    this.#hud.render(view.hud);
+    this.#buildPanel.render(view.buildOptions, view.selectedBuildType);
+    this.#towerPanel.render(view.selectedTower);
+    this.#overlays.render(view.overlay);
+  }
+}
