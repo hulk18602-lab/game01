@@ -7,6 +7,21 @@ test("map01 is a valid grid", () => {
   const grid = new Grid(map01);
   assert.equal(grid.tileAt(0, 0).id, "rock");
   assert.equal(grid.isWalkable(map01.spawnPoints.player), true);
+  assert.equal(grid.isBuildable({ x: 1, y: 1 }), true);
+  assert.equal(grid.isBuildable({ x: 5, y: 1 }), false);
+});
+
+test("map01 declares a visible, walkable and non-buildable enemy route", () => {
+  const grid = new Grid(map01);
+  assert.deepEqual(map01.enemyRoute[0], map01.spawnPoints.enemies[0]);
+  assert.deepEqual(map01.enemyRoute.at(-1), map01.spawnPoints.player);
+  assert.ok(map01.enemyRoute.every((point) => grid.tileAt(point).id === "road"));
+  assert.ok(map01.enemyRoute.every((point) => grid.isWalkable(point)));
+  assert.ok(map01.enemyRoute.every((point) => !grid.isBuildable(point)));
+  assert.ok(map01.enemyRoute.slice(1).every((point, index) => {
+    const previous = map01.enemyRoute[index];
+    return Math.abs(point.x - previous.x) + Math.abs(point.y - previous.y) === 1;
+  }));
 });
 
 test("Path finds a walkable route without mutating the grid", () => {

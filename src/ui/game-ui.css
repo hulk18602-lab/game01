@@ -13,7 +13,8 @@
 
 .game-ui__hud,
 .game-ui__build-panel,
-.game-ui__tower-panel {
+.game-ui__tower-panel,
+.game-ui__message {
   position: fixed;
   z-index: 10;
   padding: 12px;
@@ -41,8 +42,18 @@
 
 .game-ui__build-panel { bottom: 16px; left: 16px; }
 .game-ui__tower-panel { right: 16px; bottom: 16px; }
+.game-ui__message {
+  top: 76px;
+  left: 50%;
+  max-width: min(560px, calc(100vw - 32px));
+  border-color: rgb(96 165 250 / 70%);
+  transform: translateX(-50%);
+}
+.game-ui__message.is-error { border-color: #ef4444; background: rgb(69 10 10 / 94%); }
+.game-ui__message.is-success { border-color: #22c55e; background: rgb(5 46 22 / 94%); }
 .game-ui h2 { margin: 0 0 8px; font-size: 16px; }
 .game-ui p { margin: 6px 0; }
+.game-ui__build-hint { max-width: 520px; color: #cbd5e1; font-weight: 500; }
 
 .game-ui__button {
   padding: 8px 12px;
@@ -60,6 +71,12 @@
   background: var(--game-ui-accent);
 }
 
+.game-ui__button.is-selected {
+  outline: 3px solid rgb(251 191 36 / 32%);
+  outline-offset: 2px;
+}
+
+.game-ui__button.is-unavailable:not(.is-selected) { opacity: .58; }
 .game-ui__button:disabled { cursor: not-allowed; opacity: .5; }
 
 .game-ui__overlay {
@@ -75,7 +92,9 @@
 }
 
 .game-ui__overlay[hidden],
-.game-ui__tower-panel[hidden] { display: none; }
+.game-ui__tower-panel[hidden],
+.game-ui__message[hidden],
+.game-ui__build-hint[hidden] { display: none; }
 
 @media (max-width: 640px) {
   .game-ui__hud { right: 8px; left: 8px; flex-wrap: wrap; transform: none; }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Camera, Renderer } from "../src/rendering/index.js";
+import { Camera, EntityLayer, Renderer } from "../src/rendering/index.js";
 
 test("camera converts both directions", () => {
   const camera = new Camera({ x: 10, y: 20, zoom: 2, viewportWidth: 100, viewportHeight: 80 });
@@ -20,4 +20,18 @@ test("renderer only passes state to layers", () => {
   const renderer = new Renderer({ context, camera, layers: [{ render(_context, value) { calls.push(value); } }] });
   renderer.render(state);
   assert.deepEqual(calls, [state]);
+});
+
+test("entity layer renders a tower from its world position", () => {
+  const arcs = [];
+  const context = {
+    beginPath() {},
+    arc(...args) { arcs.push(args); },
+    fill() {},
+    fillText() {},
+  };
+  new EntityLayer().render(context, {
+    entities: [{ id: "tower-1", position: { x: 72, y: 120 }, radius: 18 }],
+  });
+  assert.deepEqual(arcs, [[72, 120, 18, 0, Math.PI * 2]]);
 });

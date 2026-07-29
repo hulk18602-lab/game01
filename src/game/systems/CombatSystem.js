@@ -14,8 +14,8 @@ export class CombatSystem {
       projectileSystem.spawn({
         sourceId: tower.id,
         targetId: target.id,
-        x: tower.x,
-        y: tower.y,
+        x: tower.position.x,
+        y: tower.position.y,
         damage: tower.damage,
         speed: tower.projectileSpeed,
         statusEffect: tower.statusEffect,

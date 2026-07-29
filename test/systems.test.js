@@ -5,7 +5,7 @@ import {
 } from '../src/game/systems/index.js';
 
 test('targeting, projectile damage and death rewards are separate stages', () => {
-  const tower = { id: 't1', x: 0, y: 0, range: 100, targeting: 'first', damage: 10,
+  const tower = { id: 't1', position: { x: 0, y: 0 }, range: 100, targeting: 'first', damage: 10,
     fireRate: 1, projectileSpeed: 100 };
   const enemies = [
     { id: 'near', x: 5, y: 0, health: 10, progress: 1, reward: 3 },
