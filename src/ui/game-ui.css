@@ -1,0 +1,85 @@
+:root {
+  --game-ui-surface: rgb(15 23 42 / 92%);
+  --game-ui-border: rgb(148 163 184 / 28%);
+  --game-ui-accent: #fbbf24;
+  --game-ui-text: #f8fafc;
+}
+
+.game-ui {
+  color: var(--game-ui-text);
+  font: 600 14px/1.35 system-ui, sans-serif;
+  pointer-events: none;
+}
+
+.game-ui__hud,
+.game-ui__build-panel,
+.game-ui__tower-panel {
+  position: fixed;
+  z-index: 10;
+  padding: 12px;
+  border: 1px solid var(--game-ui-border);
+  border-radius: 12px;
+  background: var(--game-ui-surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 30%);
+  pointer-events: auto;
+}
+
+.game-ui__hud {
+  top: 16px;
+  left: 50%;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.game-ui__stats,
+.game-ui__build-list {
+  display: flex;
+  gap: 8px;
+}
+
+.game-ui__build-panel { bottom: 16px; left: 16px; }
+.game-ui__tower-panel { right: 16px; bottom: 16px; }
+.game-ui h2 { margin: 0 0 8px; font-size: 16px; }
+.game-ui p { margin: 6px 0; }
+
+.game-ui__button {
+  padding: 8px 12px;
+  border: 1px solid var(--game-ui-border);
+  border-radius: 8px;
+  color: inherit;
+  background: rgb(51 65 85 / 85%);
+  cursor: pointer;
+}
+
+.game-ui__button:hover:not(:disabled),
+.game-ui__button.is-selected {
+  border-color: var(--game-ui-accent);
+  color: #111827;
+  background: var(--game-ui-accent);
+}
+
+.game-ui__button:disabled { cursor: not-allowed; opacity: .5; }
+
+.game-ui__overlay {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  background: rgb(2 6 23 / 76%);
+  backdrop-filter: blur(5px);
+  pointer-events: auto;
+}
+
+.game-ui__overlay[hidden],
+.game-ui__tower-panel[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .game-ui__hud { right: 8px; left: 8px; flex-wrap: wrap; transform: none; }
+  .game-ui__stats { width: 100%; justify-content: space-between; }
+  .game-ui__build-panel { right: 8px; bottom: 8px; left: 8px; overflow-x: auto; }
+  .game-ui__tower-panel { right: 8px; bottom: 96px; left: 8px; }
+}
