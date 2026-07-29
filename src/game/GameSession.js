@@ -1,7 +1,5 @@
-'use strict';
-
 /** Resources belonging to precisely one play-through. */
-class GameSession {
+export class GameSession {
   constructor(initialState) {
     this.state = initialState;
     this.timers = new Set();
@@ -47,4 +45,4 @@ class GameSession {
   }
 }
 
-module.exports = { GameSession };
+export default GameSession;

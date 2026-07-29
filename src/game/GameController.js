@@ -1,15 +1,13 @@
-'use strict';
+import { Outcome, OutcomeSystem } from './OutcomeSystem.js';
+import { GameSession } from './GameSession.js';
 
-const { Outcome, OutcomeSystem } = require('./OutcomeSystem');
-const { GameSession } = require('./GameSession');
-
-const GameState = Object.freeze({
+export const GameState = Object.freeze({
   PLAYING: Outcome.RUNNING,
   VICTORY: Outcome.VICTORY,
   DEFEAT: Outcome.DEFEAT,
 });
 
-class GameController {
+export class GameController {
   /**
    * @param {{baseHealth?:number, createInitialState?:function, onStateChange?:function}} options
    */
@@ -68,4 +66,4 @@ class GameController {
   }
 }
 
-module.exports = { GameController, GameState };
+export default GameController;
