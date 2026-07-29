@@ -14,6 +14,11 @@ export interface BuildOptionView {
   readonly available: boolean;
 }
 
+export interface UiMessageView {
+  readonly kind: "info" | "success" | "error";
+  readonly text: string;
+}
+
 export interface SelectedTowerView {
   readonly id: string;
   readonly name: string;
@@ -36,6 +41,7 @@ export interface UiView {
   readonly selectedTower: SelectedTowerView | null;
   readonly overlay: OverlayView;
   readonly selectedBuildType: string | null;
+  readonly message: UiMessageView | null;
 }
 
 /** Commands are intent messages. The game/application layer owns all mutations. */
@@ -54,6 +60,7 @@ export interface UiSelectors<State> {
   selectedTower(state: State): SelectedTowerView | null;
   overlay(state: State): OverlayView;
   selectedBuildType(state: State): string | null;
+  message(state: State): UiMessageView | null;
 }
 
 export interface StateReader<State> {
@@ -70,5 +77,6 @@ export function selectUiView<State>(state: State, selectors: UiSelectors<State>)
     selectedTower: selectors.selectedTower(state),
     overlay: selectors.overlay(state),
     selectedBuildType: selectors.selectedBuildType(state),
+    message: selectors.message(state),
   });
 }

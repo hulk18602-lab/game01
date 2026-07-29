@@ -21,7 +21,7 @@ export class EconomySystem {
       throw new CommandValidationError("Invalid transaction amount");
     }
     if (player.balance < amount) {
-      throw new CommandValidationError("Insufficient funds");
+      throw new CommandValidationError("Not enough money for this tower.");
     }
   }
 

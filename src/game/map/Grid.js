@@ -34,6 +34,10 @@ export class Grid {
     return this.tileAt(positionOrX, y)?.walkable === true;
   }
 
+  isBuildable(positionOrX, y) {
+    return this.tileAt(positionOrX, y)?.buildable === true;
+  }
+
   movementCost(positionOrX, y) {
     const tile = this.tileAt(positionOrX, y);
     return tile?.walkable ? (tile.movementCost ?? 1) : Infinity;

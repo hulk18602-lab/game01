@@ -3,6 +3,14 @@ export interface Position {
   readonly y: number;
 }
 
+export interface CellDefinition {
+  readonly terrain: string;
+  /** Whether enemies may move through this cell. */
+  readonly walkable: boolean;
+  /** Whether the player may place a tower on this cell. */
+  readonly buildable: boolean;
+}
+
 export interface TowerLevel {
   readonly cost: number;
   readonly sellValue: number;
@@ -34,6 +42,8 @@ export interface GameState {
   /** A position key mapped to its occupying tower id. */
   readonly occupiedCells: Map<string, string>;
   readonly towerDefinitions: Map<string, TowerDefinition>;
+  /** Immutable map rules keyed by cellKey. */
+  readonly cells: ReadonlyMap<string, CellDefinition>;
 }
 
 export function cellKey(position: Position): string {

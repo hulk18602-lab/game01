@@ -5,6 +5,7 @@ import { element } from "./dom.js";
 import { GameOverlays } from "./GameOverlays.js";
 import { Hud } from "./Hud.js";
 import { SelectedTowerPanel } from "./SelectedTowerPanel.js";
+import { StatusMessage } from "./StatusMessage.js";
 
 /** Mounts selector-driven UI and contains the state subscription lifecycle. */
 export class GameUi<State> {
@@ -13,6 +14,7 @@ export class GameUi<State> {
   readonly #buildPanel: BuildPanel;
   readonly #towerPanel: SelectedTowerPanel;
   readonly #overlays: GameOverlays;
+  readonly #message: StatusMessage;
   readonly #reader: StateReader<State>;
   readonly #selectors: UiSelectors<State>;
   #unsubscribe: (() => void) | null = null;
@@ -24,10 +26,12 @@ export class GameUi<State> {
     this.#buildPanel = new BuildPanel(dispatch);
     this.#towerPanel = new SelectedTowerPanel(dispatch);
     this.#overlays = new GameOverlays(dispatch);
+    this.#message = new StatusMessage();
     this.element.append(
       this.#hud.element,
       this.#buildPanel.element,
       this.#towerPanel.element,
+      this.#message.element,
       this.#overlays.element,
     );
   }
@@ -50,6 +54,7 @@ export class GameUi<State> {
     this.#hud.render(view.hud);
     this.#buildPanel.render(view.buildOptions, view.selectedBuildType);
     this.#towerPanel.render(view.selectedTower);
+    this.#message.render(view.message);
     this.#overlays.render(view.overlay);
   }
 }
