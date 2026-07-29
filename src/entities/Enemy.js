@@ -15,7 +15,9 @@ export class Enemy {
     this.reward = overrides.reward ?? definition.reward;
     this.baseDamage = overrides.baseDamage ?? definition.baseDamage;
     this.progress = clampProgress(overrides.progress ?? 0);
-    this.position = { x: 0, y: 0 };
+    this.position = { ...(overrides.position ?? { x: 0, y: 0 }) };
+    this.speedMultiplier = 1;
+    this.dead = false;
     this.reachedBase = false;
     this.pendingRemoval = false;
     this.removalReason = null;
@@ -23,18 +25,23 @@ export class Enemy {
 
   takeDamage(amount) {
     if (!Number.isFinite(amount) || amount < 0) throw new RangeError('Damage must be a non-negative number');
+    if (!this.isAlive) return this.health;
     this.health = Math.max(0, this.health - amount);
-    if (this.health === 0) this.markForRemoval('destroyed');
+    if (this.health === 0) {
+      this.dead = true;
+      this.markForRemoval('destroyed');
+    }
     return this.health;
   }
 
   markForRemoval(reason = 'removed') {
+    if (this.pendingRemoval) return;
     this.pendingRemoval = true;
     this.removalReason = reason;
   }
 
   get isAlive() {
-    return this.health > 0 && !this.pendingRemoval;
+    return this.health > 0 && !this.dead && !this.pendingRemoval && !this.reachedBase;
   }
 }
 

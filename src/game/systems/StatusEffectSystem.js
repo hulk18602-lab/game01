@@ -1,4 +1,4 @@
-import { isAlive } from './systemUtils.js';
+import { applyDamage, isAlive } from './systemUtils.js';
 
 /** Owns status lifetime and derived enemy properties. It never grants rewards. */
 export class StatusEffectSystem {
@@ -17,7 +17,7 @@ export class StatusEffectSystem {
       enemy.statusEffects ??= [];
       for (const effect of enemy.statusEffects) {
         if (effect.type === 'damageOverTime') {
-          enemy.health = Math.max(0, enemy.health - effect.damagePerSecond * deltaSeconds);
+          applyDamage(enemy, effect.damagePerSecond * deltaSeconds);
         }
         effect.remaining -= deltaSeconds;
       }

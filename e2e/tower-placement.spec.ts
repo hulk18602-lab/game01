@@ -2,6 +2,25 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const TILE_SIZE = 48;
 
+type DebugEntity = {
+  readonly id: string;
+  readonly health?: number;
+  readonly targetId?: string | null;
+};
+
+declare global {
+  interface Window {
+    __GAME_DEBUG__?: {
+      readonly towers: readonly DebugEntity[];
+      readonly enemies: readonly DebugEntity[];
+      readonly projectiles: readonly DebugEntity[];
+      readonly lives: number;
+      readonly gold: number;
+      readonly currentWave: number;
+    };
+  }
+}
+
 function collectBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on("console", (message) => {
@@ -152,5 +171,55 @@ test("road, water and rocks reject placement without charging gold", async ({ pa
   await expect(page.getByRole("status")).toHaveText("Towers cannot be built on water or rocks.");
   await expect(page.getByText("Gold: 350", { exact: true })).toBeVisible();
   await expect(basic).toHaveAttribute("aria-pressed", "true");
+  expect(browserErrors).toEqual([]);
+});
+
+test("tower completes target, projectile, damage, death and reward cycle", async ({ page }) => {
+  const browserErrors = collectBrowserErrors(page);
+  await page.goto("/");
+
+  const canvas = page.locator("canvas.game-canvas");
+  await page.getByRole("button", { name: "Basic tower · 100" }).click();
+  await clickCell(page, canvas, 4, 4);
+  await expect(page.getByText("Gold: 250", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Start wave" }).click();
+
+  await page.waitForFunction(() => window.__GAME_DEBUG__ !== undefined);
+  const targetHandle = await page.waitForFunction(
+    () => window.__GAME_DEBUG__?.towers[0]?.targetId ?? null,
+    null,
+    { timeout: 15_000 },
+  );
+  const targetId = await targetHandle.jsonValue() as string;
+  expect(targetId).toBeTruthy();
+
+  await page.waitForFunction(
+    (id) => window.__GAME_DEBUG__?.projectiles.some((projectile) => projectile.targetId === id),
+    targetId,
+    { timeout: 5_000 },
+  );
+
+  await expect.poll(
+    () => page.evaluate(
+      (id) => window.__GAME_DEBUG__?.enemies.find((enemy) => enemy.id === id)?.health ?? null,
+      targetId,
+    ),
+    { timeout: 5_000, intervals: [50] },
+  ).toBe(80);
+
+  await expect.poll(
+    () => page.evaluate(
+      (id) => window.__GAME_DEBUG__?.enemies.some((enemy) => enemy.id === id) ?? true,
+      targetId,
+    ),
+    { timeout: 10_000, intervals: [100] },
+  ).toBe(false);
+
+  expect(await page.evaluate(() => ({
+    gold: window.__GAME_DEBUG__?.gold,
+    lives: window.__GAME_DEBUG__?.lives,
+    currentWave: window.__GAME_DEBUG__?.currentWave,
+  }))).toEqual({ gold: 260, lives: 20, currentWave: 1 });
+  await expect(page.getByText("Gold: 260", { exact: true })).toBeVisible();
   expect(browserErrors).toEqual([]);
 });

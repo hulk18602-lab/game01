@@ -50,6 +50,14 @@ type UiSnapshot = readonly [
   selectedTowerLevel: number | null,
   score: number,
 ];
+type GameDebugApi = {
+  readonly towers: readonly RuntimeTower[];
+  readonly enemies: readonly any[];
+  readonly projectiles: readonly any[];
+  readonly lives: number;
+  readonly gold: number;
+  readonly currentWave: number;
+};
 type Runtime = GameState & {
   lives: number;
   mode: Mode;
@@ -64,6 +72,12 @@ type Runtime = GameState & {
   entities: any[];
   score: number;
 };
+
+declare global {
+  interface Window {
+    __GAME_DEBUG__?: GameDebugApi;
+  }
+}
 
 const PLAYER = "player";
 const levels = (definition: any) => [0, 1, 2].map((level) => ({
@@ -124,6 +138,17 @@ export class GameApplication {
       update: (delta: number) => this.#update(delta), render: () => this.#render(),
     });
     this.#state = this.#newState();
+    if (import.meta.env.DEV) {
+      const application = this;
+      window.__GAME_DEBUG__ = {
+        get towers() { return application.#state.runtimeTowers; },
+        get enemies() { return application.#state.enemies; },
+        get projectiles() { return application.#projectiles.projectiles; },
+        get lives() { return application.#state.lives; },
+        get gold() { return application.#state.players.get(PLAYER)!.balance; },
+        get currentWave() { return application.#waves.waveIndex + 1; },
+      };
+    }
     this.#ui = new GameUi(this, this.#selectors(), (command) => this.#dispatch(command));
     this.#screen = new CanvasCoordinateConverter(this.#canvas, this.#canvas.width, this.#canvas.height);
     this.#pointer = new PointerInputAdapter(this.#canvas, this.#screen, (event) => {
@@ -157,6 +182,7 @@ export class GameApplication {
     this.#pointer.destroy();
     this.#keyboard.destroy();
     window.removeEventListener("pointerdown", this.#outsidePointer);
+    if (import.meta.env.DEV) delete window.__GAME_DEBUG__;
     this.#ui.unmount();
   }
 
@@ -193,23 +219,23 @@ export class GameApplication {
 
   #update(delta: number): void {
     if (this.#state.mode !== "playing") return;
+    this.#updateVisualEffects(delta);
     const spawned: any[] = this.#waves.update(delta);
-    for (const enemy of spawned) { enemy.position = this.#path.getPointAt(0); enemy.x = enemy.position.x; enemy.y = enemy.position.y; }
+    for (const enemy of spawned) enemy.position = this.#path.getPointAt(0);
     this.#state.enemies.push(...spawned);
-    this.#state.waveInProgress = this.#waves.active || this.#state.enemies.length > 0;
     this.#effects.update(delta, this.#state.enemies);
     const reached = this.#movement.update(this.#state.enemies, delta);
-    for (const enemy of this.#state.enemies) { enemy.x = enemy.position.x; enemy.y = enemy.position.y; }
     (this.#movement as any).handleBaseReached(reached, (enemy: any) => { this.#state.lives -= enemy.baseDamage; });
-    this.#state.enemies = this.#movement.removeMarked(this.#state.enemies);
     this.#targeting.update(this.#state.runtimeTowers, this.#state.enemies);
     this.#combat.update(delta, this.#state.runtimeTowers, this.#state.enemies, this.#projectiles);
     this.#projectiles.update(delta, this.#state.enemies, this.#effects);
+    this.#recordCombatEvents(this.#projectiles.drainEvents());
     const before = this.#state.players.get(PLAYER)!.balance;
     const wallet = { currency: before };
     this.#cleanup.update(this.#state.enemies, wallet);
     this.#state.players.get(PLAYER)!.balance = wallet.currency;
     this.#state.score += wallet.currency - before;
+    this.#state.waveInProgress = this.#waves.active || this.#state.enemies.length > 0;
     if (this.#state.lives <= 0) this.#finish("defeat");
     else if (this.#waves.waveIndex === waveDefinitions.length - 1 && !this.#state.waveInProgress) this.#finish("victory");
     this.#emitUiIfChanged();
@@ -379,6 +405,71 @@ export class GameApplication {
     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
     this.#showMessage(message, "error");
     if (!(error instanceof CommandValidationError)) console.error(error);
+  }
+
+  #recordCombatEvents(events: readonly any[]): void {
+    for (const event of events) {
+      if (event.type === "shot") {
+        this.#state.effects.push({
+          type: "shot",
+          position: { ...event.position },
+          radius: 8,
+          color: "#fef08a",
+          fill: true,
+          duration: 0.12,
+          remaining: 0.12,
+          opacity: 1,
+        });
+      } else if (event.type === "hit") {
+        this.#state.effects.push(
+          {
+            type: "hit",
+            position: { ...event.position },
+            radius: 9,
+            color: "#f8fafc",
+            duration: 0.18,
+            remaining: 0.18,
+            opacity: 1,
+          },
+          {
+            type: "damage",
+            position: { x: event.position.x, y: event.position.y - 18 },
+            text: `-${Math.round(event.damage)}`,
+            color: "#fef2f2",
+            duration: 0.55,
+            remaining: 0.55,
+            rise: 22,
+            opacity: 1,
+          },
+        );
+      } else if (event.type === "enemy-death") {
+        this.#state.effects.push({
+          type: "enemy-death",
+          position: { ...event.position },
+          radius: 14,
+          growth: 45,
+          color: "#fb7185",
+          duration: 0.45,
+          remaining: 0.45,
+          opacity: 1,
+        });
+      }
+    }
+  }
+
+  #updateVisualEffects(delta: number): void {
+    for (const effect of this.#state.effects) {
+      effect.remaining -= delta;
+      effect.opacity = Math.max(0, effect.remaining / effect.duration);
+      if (effect.growth) effect.radius += effect.growth * delta;
+      if (effect.rise) {
+        effect.position = {
+          x: effect.position.x,
+          y: effect.position.y - effect.rise * delta,
+        };
+      }
+    }
+    this.#state.effects = this.#state.effects.filter((effect) => effect.remaining > 0);
   }
 
   #upgrade(id: string): void {

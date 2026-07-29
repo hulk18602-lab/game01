@@ -35,3 +35,28 @@ test("entity layer renders a tower from its world position", () => {
   });
   assert.deepEqual(arcs, [[72, 120, 18, 0, Math.PI * 2]]);
 });
+
+test("entity layer renders a health bar from current and max health", () => {
+  const rectangles = [];
+  const context = {
+    beginPath() {},
+    arc() {},
+    fill() {},
+    fillRect(...args) { rectangles.push({ color: this.fillStyle, args }); },
+    fillText() {},
+  };
+  new EntityLayer().render(context, {
+    entities: [{
+      id: "enemy-1",
+      kind: "enemy",
+      position: { x: 100, y: 80 },
+      radius: 12,
+      health: 50,
+      maxHealth: 100,
+    }],
+  });
+  assert.deepEqual(rectangles.at(-1), {
+    color: "#eab308",
+    args: [85.6, 56, 14.399999999999999, 5],
+  });
+});

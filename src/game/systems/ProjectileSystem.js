@@ -1,4 +1,4 @@
-import { distanceSquared, isAlive, removeInPlace } from './systemUtils.js';
+import { applyDamage, entityPosition, isAlive, removeInPlace } from './systemUtils.js';
 
 let nextProjectileId = 1;
 
@@ -7,11 +7,24 @@ export class ProjectileSystem {
   constructor({ hitRadius = 4 } = {}) {
     this.hitRadius = hitRadius;
     this.projectiles = [];
+    this.events = [];
   }
 
   spawn(projectile) {
-    const created = { id: `projectile-${nextProjectileId++}`, ...projectile, spent: false };
+    const position = entityPosition(projectile);
+    const created = {
+      id: `projectile-${nextProjectileId++}`,
+      ...projectile,
+      position: { ...position },
+      spent: false,
+    };
     this.projectiles.push(created);
+    this.events.push({
+      type: 'shot',
+      sourceId: created.sourceId,
+      targetId: created.targetId,
+      position: { ...created.position },
+    });
     return created;
   }
 
@@ -26,27 +39,47 @@ export class ProjectileSystem {
         continue;
       }
 
-      const dx = (target.x ?? 0) - (projectile.x ?? 0);
-      const dy = (target.y ?? 0) - (projectile.y ?? 0);
+      const targetPosition = entityPosition(target);
+      const projectilePosition = entityPosition(projectile);
+      const dx = targetPosition.x - projectilePosition.x;
+      const dy = targetPosition.y - projectilePosition.y;
       const distance = Math.hypot(dx, dy);
       const travel = projectile.speed * deltaSeconds;
       if (distance <= travel + this.hitRadius) {
-        projectile.x = target.x;
-        projectile.y = target.y;
-        target.health = Math.max(0, target.health - projectile.damage);
-        if (projectile.statusEffect && statusEffectSystem) {
+        projectile.position = { ...targetPosition };
+        const healthBefore = target.health;
+        const healthAfter = applyDamage(target, projectile.damage);
+        this.events.push({
+          type: 'hit',
+          sourceId: projectile.sourceId,
+          targetId: target.id,
+          position: { ...targetPosition },
+          damage: healthBefore - healthAfter,
+        });
+        if (healthAfter === 0) {
+          this.events.push({
+            type: 'enemy-death',
+            sourceId: projectile.sourceId,
+            targetId: target.id,
+            position: { ...targetPosition },
+          });
+        } else if (projectile.statusEffect && statusEffectSystem) {
           statusEffectSystem.apply(target, projectile.statusEffect);
         }
         projectile.spent = true;
       } else if (distance > 0) {
-        projectile.x += (dx / distance) * travel;
-        projectile.y += (dy / distance) * travel;
+        projectile.position.x += (dx / distance) * travel;
+        projectile.position.y += (dy / distance) * travel;
       }
     }
 
     removeInPlace(this.projectiles, (projectile) =>
       projectile.spent || !enemiesById.has(projectile.targetId));
     return this.projectiles;
+  }
+
+  drainEvents() {
+    return this.events.splice(0, this.events.length);
   }
 }
 

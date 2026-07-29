@@ -1,6 +1,7 @@
 import type { Position, Tower } from "./types.js";
 
 export interface RuntimeTower {
+  readonly kind: "tower";
   readonly id: string;
   readonly type: string;
   /** The single world-space position consumed by rendering, combat and hit testing. */
@@ -40,6 +41,7 @@ export function createRuntimeTower(
   position: Position,
 ): RuntimeTower {
   return {
+    kind: "tower",
     id: tower.id,
     type: tower.type,
     position: { ...position },
@@ -65,9 +67,15 @@ export function createRenderEntities(
     ...towers,
     ...enemies.map((enemy) => ({
       ...enemy,
+      kind: "enemy",
       color: enemy.type === "tank" ? "#ef4444" : enemy.type === "runner" ? "#fbbf24" : "#fb7185",
       radius: enemy.type === "tank" ? 17 : 12,
     })),
-    ...projectiles.map((projectile) => ({ ...projectile, color: "#f8fafc", radius: 4 })),
+    ...projectiles.map((projectile) => ({
+      ...projectile,
+      kind: "projectile",
+      color: "#f8fafc",
+      radius: 4,
+    })),
   ];
 }

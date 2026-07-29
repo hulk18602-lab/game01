@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import Enemy from '../src/entities/Enemy.js';
 import {
   CleanupSystem, CombatSystem, ProjectileSystem, StatusEffectSystem, TargetingSystem,
 } from '../src/game/systems/index.js';
@@ -8,8 +9,8 @@ test('targeting, projectile damage and death rewards are separate stages', () =>
   const tower = { id: 't1', position: { x: 0, y: 0 }, range: 100, targeting: 'first', damage: 10,
     fireRate: 1, projectileSpeed: 100 };
   const enemies = [
-    { id: 'near', x: 5, y: 0, health: 10, progress: 1, reward: 3 },
-    { id: 'first', x: 10, y: 0, health: 10, progress: 2, reward: 7 },
+    new Enemy('grunt', { id: 'near', position: { x: 5, y: 0 }, health: 10, progress: 0.5, reward: 3 }),
+    new Enemy('grunt', { id: 'first', position: { x: 10, y: 0 }, health: 10, progress: 0.8, reward: 7 }),
   ];
   const projectiles = new ProjectileSystem();
   const player = { currency: 0 };
@@ -30,7 +31,7 @@ test('targeting, projectile damage and death rewards are separate stages', () =>
 });
 
 test('status effects expire and damage over time is rewarded only by cleanup', () => {
-  const enemy = { id: 'e1', health: 5, reward: 4 };
+  const enemy = new Enemy('grunt', { id: 'e1', health: 5, reward: 4 });
   const effects = new StatusEffectSystem();
   effects.apply(enemy, { type: 'slow', duration: 1, multiplier: 0.5 });
   effects.apply(enemy, { type: 'damageOverTime', duration: 1, damagePerSecond: 5 });

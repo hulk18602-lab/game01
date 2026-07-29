@@ -11,14 +11,21 @@ export class CleanupSystem {
 
   update(enemies, player) {
     for (const enemy of enemies) {
-      if (enemy.health > 0 || enemy._deathProcessed) continue;
-      enemy.dead = true;
-      enemy._deathProcessed = true;
-      const reward = enemy.reward ?? 0;
-      if (player) player.currency = (player.currency ?? 0) + reward;
-      this.onReward(reward, enemy, player);
+      const destroyed = enemy.removalReason === 'destroyed'
+        || (enemy.health <= 0 && enemy.removalReason !== 'reached-base');
+      if (destroyed) {
+        enemy.dead = true;
+        enemy.pendingRemoval = true;
+        enemy.removalReason = 'destroyed';
+        if (!enemy._deathProcessed) {
+          enemy._deathProcessed = true;
+          const reward = enemy.reward ?? 0;
+          if (player) player.currency = (player.currency ?? 0) + reward;
+          this.onReward(reward, enemy, player);
+        }
+      }
     }
-    removeInPlace(enemies, (enemy) => enemy._deathProcessed);
+    removeInPlace(enemies, (enemy) => enemy.pendingRemoval === true);
     return enemies;
   }
 }
