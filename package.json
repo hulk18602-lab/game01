@@ -1,0 +1,9 @@
+{
+  "name": "game01-ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "npm run check"
+  }
+}
