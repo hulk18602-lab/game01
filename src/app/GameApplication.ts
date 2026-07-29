@@ -36,6 +36,20 @@ type PlacementPreview = {
   readonly color: string;
   readonly valid: boolean;
 };
+type UiSnapshot = readonly [
+  lives: number,
+  money: number,
+  waveIndex: number,
+  waveInProgress: boolean,
+  mode: Mode,
+  selectedBuildType: string | null,
+  selectedTowerId: string | null,
+  messageKind: UiMessageView["kind"] | null,
+  messageText: string | null,
+  selectedTowerType: string | null,
+  selectedTowerLevel: number | null,
+  score: number,
+];
 type Runtime = GameState & {
   lives: number;
   mode: Mode;
@@ -72,6 +86,7 @@ export class GameApplication {
   readonly #screen: CanvasCoordinateConverter;
   readonly #listeners = new Set<() => void>();
   #state!: Runtime;
+  #lastUiSnapshot: UiSnapshot | null = null;
   #movement: MovementSystem;
   #waves: WaveSystem;
   #targeting = new TargetingSystem();
@@ -132,6 +147,7 @@ export class GameApplication {
   start(): void {
     this.#root.replaceChildren(this.#canvas);
     this.#ui.mount(this.#root);
+    this.#lastUiSnapshot = this.#uiSnapshot();
     this.#render();
     this.#loop.start();
   }
@@ -196,7 +212,7 @@ export class GameApplication {
     this.#state.score += wallet.currency - before;
     if (this.#state.lives <= 0) this.#finish("defeat");
     else if (this.#waves.waveIndex === waveDefinitions.length - 1 && !this.#state.waveInProgress) this.#finish("victory");
-    this.#emit();
+    this.#emitUiIfChanged();
   }
 
   #render(): void {
@@ -246,7 +262,7 @@ export class GameApplication {
     } catch (error) {
       this.#reportError(error);
     }
-    this.#emit(); this.#render();
+    this.#emitUiIfChanged(); this.#render();
   }
 
   #onPointerMove(point: Position): void {
@@ -273,7 +289,7 @@ export class GameApplication {
       Math.hypot(tower.position.x - point.x, tower.position.y - point.y) < 24
     );
     this.#state.selectedTowerId = selected?.id ?? null;
-    this.#emit();
+    this.#emitUiIfChanged();
     this.#render();
   }
 
@@ -285,7 +301,7 @@ export class GameApplication {
     if (validationError) {
       this.#showMessage(validationError, "error");
       this.#refreshPlacementPreview();
-      this.#emit();
+      this.#emitUiIfChanged();
       this.#render();
       return;
     }
@@ -301,7 +317,7 @@ export class GameApplication {
       this.#reportError(error);
     }
     this.#refreshPlacementPreview();
-    this.#emit();
+    this.#emitUiIfChanged();
     this.#render();
   }
 
@@ -374,7 +390,31 @@ export class GameApplication {
   #sell(id: string): void { new SellTowerCommand(PLAYER, id).execute(this.#state); this.#state.runtimeTowers = this.#state.runtimeTowers.filter((tower) => tower.id !== id); this.#state.selectedTowerId = null; }
   #finish(mode: "victory" | "defeat"): void { this.#state.mode = mode; }
   #restart(): void { this.#waves = new WaveSystem(waveDefinitions); this.#projectiles = new ProjectileSystem(); this.#pointerPosition = null; this.#state = this.#newState(); this.#nextTower = 1; }
-  #emit(): void { for (const listener of this.#listeners) listener(); }
+  #uiSnapshot(): UiSnapshot {
+    const selected = this.#state.towers.get(this.#state.selectedTowerId ?? "");
+    return [
+      this.#state.lives,
+      this.#state.players.get(PLAYER)!.balance,
+      this.#waves.waveIndex,
+      this.#state.waveInProgress,
+      this.#state.mode,
+      this.#state.selectedBuildType,
+      this.#state.selectedTowerId,
+      this.#state.message?.kind ?? null,
+      this.#state.message?.text ?? null,
+      selected?.type ?? null,
+      selected?.level ?? null,
+      this.#state.score,
+    ];
+  }
+
+  #emitUiIfChanged(): void {
+    const next = this.#uiSnapshot();
+    const previous = this.#lastUiSnapshot;
+    if (previous && previous.every((value, index) => value === next[index])) return;
+    this.#lastUiSnapshot = next;
+    for (const listener of this.#listeners) listener();
+  }
 
   #selectors(): UiSelectors<Runtime> {
     return {

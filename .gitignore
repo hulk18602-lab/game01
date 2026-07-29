@@ -1,4 +1,7 @@
 dist/
 .test-dist/
+.playwright-output/
 node_modules/
 npm-debug.log*
+playwright-report/
+test-results/
