@@ -1,7 +1,3 @@
-'use strict';
-
-module.exports = {
-  ...require('./game/OutcomeSystem'),
-  ...require('./game/GameSession'),
-  ...require('./game/GameController'),
-};
+export * from './game/OutcomeSystem.js';
+export * from './game/GameSession.js';
+export * from './game/GameController.js';

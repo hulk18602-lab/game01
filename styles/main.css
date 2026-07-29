@@ -8,10 +8,23 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow: hidden;
 }
 
 #app {
   display: grid;
   min-height: 100vh;
   place-items: center;
+  position: relative;
+  background: radial-gradient(circle at top, #334155, #020617 70%);
+}
+
+.game-canvas {
+  display: block;
+  width: min(100vw, calc(100vh * 5 / 3));
+  height: auto;
+  max-height: 100vh;
+  border: 1px solid rgb(148 163 184 / 35%);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 55%);
+  touch-action: none;
 }

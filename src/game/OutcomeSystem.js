@@ -1,6 +1,4 @@
-'use strict';
-
-const Outcome = Object.freeze({
+export const Outcome = Object.freeze({
   RUNNING: 'running',
   VICTORY: 'victory',
   DEFEAT: 'defeat',
@@ -10,7 +8,7 @@ const Outcome = Object.freeze({
  * Determines the result of a game session.  The system deliberately owns no
  * timers and mutates no world data, which makes it safe to replace on restart.
  */
-class OutcomeSystem {
+export class OutcomeSystem {
   constructor(onOutcome = () => {}) {
     if (typeof onOutcome !== 'function') {
       throw new TypeError('onOutcome must be a function');
@@ -46,4 +44,4 @@ class OutcomeSystem {
   }
 }
 
-module.exports = { Outcome, OutcomeSystem };
+export default OutcomeSystem;

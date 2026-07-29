@@ -1,8 +1,6 @@
-'use strict';
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { GameController, GameState, OutcomeSystem } = require('../src');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { GameController, GameState, OutcomeSystem } from '../src/index.js';
 
 test('victory requires the final wave and no active enemies', () => {
   const outcomes = [];
