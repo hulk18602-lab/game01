@@ -18,6 +18,7 @@
 .game-ui__build-panel,
 .game-ui__tower-panel,
 .game-ui__hero-panel,
+.game-ui__hero-skills,
 .game-ui__enemy-tooltip,
 .game-ui__message {
   position: fixed;
@@ -230,6 +231,52 @@
   border-color: rgb(134 239 172 / 54%);
 }
 .game-ui__hero-panel p { margin-bottom: 4px; }
+.game-ui__hero-skills {
+  top: 280px;
+  left: 14px;
+  width: min(330px, calc(100vw - 28px));
+  max-height: calc(100vh - 400px);
+  box-sizing: border-box;
+  border-color: rgb(250 204 21 / 48%);
+  overflow-y: auto;
+}
+.game-ui__skill-points {
+  color: #fde68a;
+  font-weight: 800;
+}
+.game-ui__skill-list {
+  display: grid;
+  gap: 7px;
+}
+.game-ui__skill-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 9px;
+  padding: 8px;
+  border: 1px solid rgb(148 163 184 / 20%);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 4%);
+}
+.game-ui__skill-card p {
+  grid-column: 1;
+  margin: 0;
+  color: var(--game-ui-muted);
+  font-size: 11px;
+}
+.game-ui__skill-level {
+  color: #fde68a;
+}
+.game-ui__skill-card .game-ui__button {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  min-height: 30px;
+  align-self: center;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.game-ui__tower-panel .is-buffed {
+  color: #fde68a;
+}
 .game-ui__eyebrow {
   color: #9dd9ca;
   font-size: 12px;
@@ -274,6 +321,7 @@
   .game-ui__message { top: 150px; }
   .game-ui__enemy-tooltip { top: 154px; }
   .game-ui__hero-panel { top: 198px; }
+  .game-ui__hero-skills { top: 370px; max-height: calc(100vh - 490px); }
   .game-ui__build-list { overflow-x: auto; }
 }
 
@@ -289,6 +337,12 @@
   .game-ui__tower-panel { right: 6px; bottom: 104px; left: 6px; width: auto; }
   .game-ui__enemy-tooltip { top: 152px; right: 6px; }
   .game-ui__hero-panel { top: 198px; left: 6px; }
+  .game-ui__hero-skills {
+    top: 362px;
+    left: 6px;
+    width: calc(100vw - 12px);
+    max-height: 34vh;
+  }
   .game-ui__tower-card { min-width: 126px; }
 }
 

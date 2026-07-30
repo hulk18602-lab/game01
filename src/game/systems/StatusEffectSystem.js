@@ -17,7 +17,18 @@ export class StatusEffectSystem {
       enemy.statusEffects ??= [];
       for (const effect of enemy.statusEffects) {
         if (effect.type === 'damageOverTime') {
+          const healthBefore = enemy.health;
+          const shieldBefore = enemy.shield ?? 0;
           applyDamage(enemy, effect.damagePerSecond * deltaSeconds, effect.damageType ?? 'cold');
+          const applied = healthBefore + shieldBefore - enemy.health - (enemy.shield ?? 0);
+          if (applied > 0 && effect.sourceId) {
+            enemy.damageContributors ??= new Map();
+            enemy.damageContributors.set(
+              effect.sourceId,
+              (enemy.damageContributors.get(effect.sourceId) ?? 0) + applied,
+            );
+            enemy.lastDamageSourceId = effect.sourceId;
+          }
         }
         effect.remaining -= deltaSeconds;
       }

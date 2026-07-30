@@ -10,6 +10,10 @@ export interface CombatEffectEvent {
   readonly sourceId?: string;
   readonly targetId?: string;
   readonly reward?: number;
+  readonly contributions?: readonly {
+    readonly sourceId: string;
+    readonly damage: number;
+  }[];
 }
 
 export interface VisualEffect {

@@ -27,12 +27,14 @@ export class Enemy {
     this.armor = overrides.armor ?? definition.armor ?? 0;
     this.regeneration = overrides.regeneration ?? definition.regeneration ?? 0;
     this.boss = overrides.boss ?? definition.boss ?? false;
+    this.elite = overrides.elite ?? definition.elite ?? false;
     this.bossPhase = overrides.bossPhase ?? 1;
     this.progress = clampProgress(overrides.progress ?? 0);
     this.position = { ...(overrides.position ?? { x: 0, y: 0 }) };
     this.speedMultiplier = 1;
     this.abilitySpeedMultiplier = 1;
     this.statusEffects = [...(overrides.statusEffects ?? [])];
+    this.damageContributors = new Map(overrides.damageContributors ?? []);
     this.dead = false;
     this.reachedBase = false;
     this.pendingRemoval = false;

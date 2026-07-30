@@ -156,13 +156,22 @@ export class ProjectileSystem {
     const shieldBefore = victim.shield ?? 0;
     const healthAfter = applyDamage(victim, damage, projectile.damageType);
     const shieldAfter = victim.shield ?? 0;
+    const appliedDamage = healthBefore + shieldBefore - healthAfter - shieldAfter;
+    if (appliedDamage > 0) {
+      victim.damageContributors ??= new Map();
+      victim.damageContributors.set(
+        projectile.sourceId,
+        (victim.damageContributors.get(projectile.sourceId) ?? 0) + appliedDamage,
+      );
+      victim.lastDamageSourceId = projectile.sourceId;
+    }
     const position = entityPosition(victim);
     this.events.push({
       type: 'hit',
       sourceId: projectile.sourceId,
       targetId: victim.id,
       position: { x: position.x, y: position.y },
-      damage: healthBefore + shieldBefore - healthAfter - shieldAfter,
+      damage: appliedDamage,
       damageType: projectile.damageType,
       areaRadius: projectile.areaRadius,
     });
@@ -174,9 +183,15 @@ export class ProjectileSystem {
         position: { x: position.x, y: position.y },
         damageType: projectile.damageType,
         reward: victim.reward ?? 0,
+        contributions: [...(victim.damageContributors ?? new Map())].map(
+          ([sourceId, contributedDamage]) => ({ sourceId, damage: contributedDamage }),
+        ),
       });
     } else if (projectile.statusEffect && statusEffectSystem) {
-      statusEffectSystem.apply(victim, projectile.statusEffect);
+      statusEffectSystem.apply(victim, {
+        ...projectile.statusEffect,
+        sourceId: projectile.sourceId,
+      });
     }
   }
 

@@ -1,7 +1,7 @@
 import type { HeroView } from "./contracts.js";
 import { element } from "./dom.js";
 
-/** Stable DOM panel for the Level 3 archer. */
+/** Stable DOM panel for the campaign archer. */
 export class HeroPanel {
   readonly element = element("section", "game-ui__hero-panel");
   readonly #title = element("h2");
@@ -33,12 +33,15 @@ export class HeroPanel {
       ? [
         hero.id,
         hero.level,
+        hero.maximumLevel,
         hero.xp,
         hero.xpToNextLevel,
         hero.damage,
         hero.range,
         hero.fireRate,
         hero.target,
+        hero.skillPoints,
+        hero.auraRadius,
       ].join("|")
       : "none";
     if (signature === this.#signature) return;
@@ -46,8 +49,11 @@ export class HeroPanel {
     this.element.hidden = hero === null;
     if (!hero) return;
     this.#title.textContent = `🏹 ${hero.name}`;
-    this.#level.textContent = `Hero level ${hero.level}`;
-    this.#xp.textContent = `XP ${hero.xp}/${hero.xpToNextLevel}`;
+    this.#level.textContent =
+      `Hero level ${hero.level}/${hero.maximumLevel} · ${hero.skillPoints} skill point${hero.skillPoints === 1 ? "" : "s"}`;
+    this.#xp.textContent = hero.level >= hero.maximumLevel
+      ? "XP MAX"
+      : `XP ${hero.xp}/${hero.xpToNextLevel}`;
     this.#stats.textContent =
       `Damage ${hero.damage} · Range ${hero.range} · Rate ${hero.fireRate.toFixed(2)}/s`;
     this.#target.textContent = `Target: ${hero.target ?? "None"}`;

@@ -1,4 +1,12 @@
 import { isLevelId, type LevelId } from "../../content/levels/levelDefinitions.js";
+import {
+  createDefaultHeroSkills,
+  heroSkillDefinitions,
+  heroSkillIds,
+  MAX_HERO_LEVEL,
+  type HeroSkillLevels,
+  xpRequiredForHeroLevel,
+} from "../../content/heroes/heroSkills.js";
 import type { DifficultyId, FlowSnapshot, GameSpeed } from "../GameFlow.js";
 import type { Position } from "../types.js";
 
@@ -26,6 +34,9 @@ export interface GameSettings {
   readonly bestScoreByLevel: Readonly<Partial<Record<LevelId, number>>>;
   readonly bestDifficultyByLevel: Readonly<Partial<Record<LevelId, DifficultyId>>>;
   readonly heroLevel: number;
+  readonly heroXp: number;
+  readonly heroSkillPoints: number;
+  readonly heroSkills: Readonly<HeroSkillLevels>;
 }
 
 export interface SavedTower {
@@ -45,6 +56,7 @@ export interface SavedEnemy {
   readonly progress: number;
   readonly position: Position;
   readonly statusEffects: readonly Record<string, unknown>[];
+  readonly damageContributors?: readonly (readonly [string, number])[];
   readonly bossPhase: number;
 }
 
@@ -61,6 +73,8 @@ export interface SavedHero {
   readonly moveTarget: Position | null;
   readonly level: number;
   readonly xp: number;
+  readonly skillPoints?: number;
+  readonly skills?: Readonly<HeroSkillLevels>;
 }
 
 export interface ActiveGameSave {
@@ -96,6 +110,9 @@ const defaultSettings = (): GameSettings => ({
   bestScoreByLevel: {},
   bestDifficultyByLevel: {},
   heroLevel: 1,
+  heroXp: 0,
+  heroSkillPoints: 0,
+  heroSkills: createDefaultHeroSkills(),
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -138,6 +155,55 @@ const difficultyRecord = (value: unknown): Partial<Record<LevelId, DifficultyId>
   return result;
 };
 
+interface HeroProgression {
+  readonly level: number;
+  readonly xp: number;
+  readonly skillPoints: number;
+  readonly skills: HeroSkillLevels;
+}
+
+const heroProgression = (value: Record<string, unknown>): HeroProgression => {
+  const level = Number.isInteger(value.heroLevel)
+    && Number(value.heroLevel) >= 1
+    && Number(value.heroLevel) <= MAX_HERO_LEVEL
+    ? Number(value.heroLevel)
+    : 1;
+  const skills = createDefaultHeroSkills();
+  if (isRecord(value.heroSkills)) {
+    for (const skillId of heroSkillIds) {
+      const candidate = value.heroSkills[skillId];
+      const maximum = heroSkillDefinitions[skillId].levels.length;
+      if (Number.isInteger(candidate)
+        && Number(candidate) >= 0
+        && Number(candidate) <= maximum) {
+        const unlockedLevelCount = heroSkillDefinitions[skillId].levels
+          .filter((skillLevel) => skillLevel.requiredHeroLevel <= level)
+          .length;
+        skills[skillId] = Math.min(Number(candidate), unlockedLevelCount);
+      }
+    }
+  }
+  const spent = heroSkillIds.reduce((total, skillId) => total + skills[skillId], 0);
+  if (spent > level - 1) {
+    Object.assign(skills, createDefaultHeroSkills());
+  }
+  const available = level - 1
+    - heroSkillIds.reduce((total, skillId) => total + skills[skillId], 0);
+  const skillPoints = Number.isInteger(value.heroSkillPoints)
+    && Number(value.heroSkillPoints) >= 0
+    && Number(value.heroSkillPoints) <= available
+    ? Number(value.heroSkillPoints)
+    : available;
+  const required = xpRequiredForHeroLevel(level);
+  const xp = level < MAX_HERO_LEVEL
+    && Number.isInteger(value.heroXp)
+    && Number(value.heroXp) >= 0
+    && Number(value.heroXp) < required
+    ? Number(value.heroXp)
+    : 0;
+  return { level, xp, skillPoints, skills };
+};
+
 /** Defensive schema-v2 localStorage boundary with settings-only migration from v1. */
 export class GameStorage {
   constructor(private readonly storage: StorageLike | null) {}
@@ -151,6 +217,7 @@ export class GameStorage {
     const unlocked = levelIds(parsed.unlockedLevelIds, ["level-1"]);
     if (!unlocked.includes("level-1")) unlocked.unshift("level-1");
     const completed = levelIds(parsed.completedLevelIds, []);
+    const hero = heroProgression(parsed);
     const selected = isLevelId(parsed.selectedLevelId) && unlocked.includes(parsed.selectedLevelId)
       ? parsed.selectedLevelId
       : "level-1";
@@ -167,9 +234,10 @@ export class GameStorage {
       completedLevelIds: completed,
       bestScoreByLevel: scoreRecord(parsed.bestScoreByLevel),
       bestDifficultyByLevel: difficultyRecord(parsed.bestDifficultyByLevel),
-      heroLevel: Number.isInteger(parsed.heroLevel) && Number(parsed.heroLevel) >= 1
-        ? Number(parsed.heroLevel)
-        : 1,
+      heroLevel: hero.level,
+      heroXp: hero.xp,
+      heroSkillPoints: hero.skillPoints,
+      heroSkills: hero.skills,
     };
   }
 
@@ -220,6 +288,9 @@ export class GameStorage {
       bestScoreByLevel: legacyScore > 0 ? { "level-1": legacyScore } : {},
       bestDifficultyByLevel: {},
       heroLevel: 1,
+      heroXp: 0,
+      heroSkillPoints: 0,
+      heroSkills: createDefaultHeroSkills(),
     };
     this.saveSettings(migrated);
     return migrated;
@@ -241,8 +312,13 @@ export class GameStorage {
         || (value.hero.moveTarget !== null && !this.isPosition(value.hero.moveTarget))
         || !Number.isInteger(value.hero.level)
         || Number(value.hero.level) < 1
+        || Number(value.hero.level) > MAX_HERO_LEVEL
         || !Number.isInteger(value.hero.xp)
-        || Number(value.hero.xp) < 0) return false;
+        || Number(value.hero.xp) < 0
+        || (value.hero.skillPoints !== undefined
+          && (!Number.isInteger(value.hero.skillPoints)
+            || Number(value.hero.skillPoints) < 0))
+        || (value.hero.skills !== undefined && !this.isHeroSkills(value.hero.skills))) return false;
     }
     return Number.isFinite(value.lives)
       && Number.isFinite(value.gold)
@@ -259,6 +335,16 @@ export class GameStorage {
 
   private isPosition(value: unknown): value is Position {
     return isRecord(value) && Number.isFinite(value.x) && Number.isFinite(value.y);
+  }
+
+  private isHeroSkills(value: unknown): value is HeroSkillLevels {
+    if (!isRecord(value)) return false;
+    return heroSkillIds.every((skillId) => {
+      const candidate = value[skillId];
+      return Number.isInteger(candidate)
+        && Number(candidate) >= 0
+        && Number(candidate) <= heroSkillDefinitions[skillId].levels.length;
+    });
   }
 
   private read(key: string): unknown {

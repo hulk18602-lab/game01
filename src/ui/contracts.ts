@@ -1,6 +1,7 @@
 import type { DifficultyId, GameSpeed } from "../game/GameFlow.js";
 import type { TargetingMode } from "../game/types.js";
 import type { LevelId } from "../content/levels/levelDefinitions.js";
+import type { HeroSkillId } from "../content/heroes/heroSkills.js";
 
 /** Read-only projections consumed by the UI. Game entities never cross this boundary. */
 export interface HudView {
@@ -58,6 +59,9 @@ export interface SelectedTowerView {
   readonly damage: number;
   readonly range: number;
   readonly fireRate: number;
+  readonly effectiveDamage: number;
+  readonly effectiveFireRate: number;
+  readonly auraBuffed: boolean;
   readonly targeting: TargetingMode;
   readonly upgradeCost: number | null;
   readonly upgradeAffordable: boolean;
@@ -88,12 +92,31 @@ export interface HeroView {
   readonly id: string;
   readonly name: string;
   readonly level: number;
+  readonly maximumLevel: number;
   readonly xp: number;
   readonly xpToNextLevel: number;
   readonly damage: number;
   readonly range: number;
   readonly fireRate: number;
   readonly target: string | null;
+  readonly skillPoints: number;
+  readonly auraRadius: number;
+}
+
+export interface HeroSkillView {
+  readonly id: HeroSkillId;
+  readonly name: string;
+  readonly description: string;
+  readonly level: number;
+  readonly maximumLevel: number;
+  readonly nextBonus: string;
+  readonly upgradeAvailable: boolean;
+  readonly blockedReason: string | null;
+}
+
+export interface HeroSkillsView {
+  readonly skillPoints: number;
+  readonly skills: readonly HeroSkillView[];
 }
 
 export interface LevelOptionView {
@@ -141,6 +164,7 @@ export interface UiView {
   readonly selectedTower: SelectedTowerView | null;
   readonly enemyTooltip: EnemyTooltipView | null;
   readonly hero: HeroView | null;
+  readonly heroSkills: HeroSkillsView | null;
   readonly overlay: OverlayView;
   readonly selectedBuildType: string | null;
   readonly message: UiMessageView | null;
@@ -160,6 +184,7 @@ export type UiCommand =
   | { readonly type: "select-build"; readonly towerType: string }
   | { readonly type: "cancel-build" }
   | { readonly type: "upgrade-tower"; readonly towerId: string }
+  | { readonly type: "upgrade-hero-skill"; readonly skillId: HeroSkillId }
   | { readonly type: "sell-tower"; readonly towerId: string }
   | { readonly type: "set-targeting"; readonly towerId: string; readonly mode: TargetingMode }
   | { readonly type: "toggle-pause" }
@@ -180,6 +205,7 @@ export interface UiSelectors<State> {
   selectedTower(state: State): SelectedTowerView | null;
   enemyTooltip(state: State): EnemyTooltipView | null;
   hero(state: State): HeroView | null;
+  heroSkills(state: State): HeroSkillsView | null;
   overlay(state: State): OverlayView;
   selectedBuildType(state: State): string | null;
   message(state: State): UiMessageView | null;
@@ -200,6 +226,7 @@ export function selectUiView<State>(state: State, selectors: UiSelectors<State>)
     selectedTower: selectors.selectedTower(state),
     enemyTooltip: selectors.enemyTooltip(state),
     hero: selectors.hero(state),
+    heroSkills: selectors.heroSkills(state),
     overlay: selectors.overlay(state),
     selectedBuildType: selectors.selectedBuildType(state),
     message: selectors.message(state),
