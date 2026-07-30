@@ -1,7 +1,7 @@
 :root {
-  font-family: system-ui, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   color: #f5f5f5;
-  background: #181818;
+  background: #07131a;
 }
 
 body {
@@ -16,7 +16,9 @@ body {
   min-height: 100vh;
   place-items: center;
   position: relative;
-  background: radial-gradient(circle at top, #334155, #020617 70%);
+  background:
+    radial-gradient(circle at 50% 0, #315f5b, transparent 42%),
+    linear-gradient(180deg, #132c31, #020b11 72%);
 }
 
 .game-canvas {
@@ -24,7 +26,8 @@ body {
   width: min(100vw, calc(100vh * 5 / 3));
   height: auto;
   max-height: 100vh;
-  border: 1px solid rgb(148 163 184 / 35%);
+  border: 1px solid rgb(216 184 112 / 36%);
+  border-radius: 4px;
   box-shadow: 0 24px 80px rgb(0 0 0 / 55%);
   touch-action: none;
 }

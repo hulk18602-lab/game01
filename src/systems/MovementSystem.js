@@ -11,8 +11,11 @@ export class MovementSystem {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0) throw new RangeError('Delta time must be non-negative');
     const reachedBase = [];
     for (const enemy of enemies) {
-      if (enemy.pendingRemoval || enemy.reachedBase) continue;
-      enemy.progress = Math.min(1, enemy.progress + (enemy.speed * deltaSeconds) / this.path.length);
+      if (enemy.pendingRemoval || enemy.dead || enemy.reachedBase) continue;
+      const effectiveSpeed = enemy.speed
+        * (enemy.speedMultiplier ?? 1)
+        * (enemy.abilitySpeedMultiplier ?? 1);
+      enemy.progress = Math.min(1, enemy.progress + (effectiveSpeed * deltaSeconds) / this.path.length);
       enemy.position = this.path.getPointAt(enemy.progress);
       if (enemy.progress === 1) {
         enemy.reachedBase = true;

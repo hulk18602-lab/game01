@@ -1,15 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import Enemy from '../src/entities/Enemy.js';
 import {
   CleanupSystem, CombatSystem, ProjectileSystem, StatusEffectSystem, TargetingSystem,
 } from '../src/game/systems/index.js';
+import { getDifficulty } from '../src/content/balance/difficulties.js';
+import enemyTypes from '../src/content/enemies/enemyTypes.js';
+import map01 from '../src/content/maps/map01.js';
+import waveDefinitions from '../src/content/waves/waveDefinitions.js';
 
 test('targeting, projectile damage and death rewards are separate stages', () => {
   const tower = { id: 't1', position: { x: 0, y: 0 }, range: 100, targeting: 'first', damage: 10,
     fireRate: 1, projectileSpeed: 100 };
   const enemies = [
-    { id: 'near', x: 5, y: 0, health: 10, progress: 1, reward: 3 },
-    { id: 'first', x: 10, y: 0, health: 10, progress: 2, reward: 7 },
+    new Enemy('grunt', { id: 'near', position: { x: 5, y: 0 }, health: 10, progress: 0.5, reward: 3 }),
+    new Enemy('grunt', { id: 'first', position: { x: 10, y: 0 }, health: 10, progress: 0.8, reward: 7 }),
   ];
   const projectiles = new ProjectileSystem();
   const player = { currency: 0 };
@@ -30,7 +35,7 @@ test('targeting, projectile damage and death rewards are separate stages', () =>
 });
 
 test('status effects expire and damage over time is rewarded only by cleanup', () => {
-  const enemy = { id: 'e1', health: 5, reward: 4 };
+  const enemy = new Enemy('grunt', { id: 'e1', health: 5, reward: 4 });
   const effects = new StatusEffectSystem();
   effects.apply(enemy, { type: 'slow', duration: 1, multiplier: 0.5 });
   effects.apply(enemy, { type: 'damageOverTime', duration: 1, damagePerSecond: 5 });
@@ -42,4 +47,21 @@ test('status effects expire and damage over time is rewarded only by cleanup', (
   const player = { currency: 0 };
   new CleanupSystem().update([enemy], player);
   assert.equal(player.currency, 4);
+});
+
+test('campaign content has twelve escalating waves, two bosses and a 15-25 minute 1x target', () => {
+  assert.equal(waveDefinitions.length, 12);
+  assert.equal(waveDefinitions[5].groups.some(({ type }) => type === 'boss'), true);
+  assert.equal(waveDefinitions[11].groups.some(({ type }) => type === 'boss'), true);
+  const difficulty = getDifficulty('normal');
+  const pathLength = (map01.enemyRoute.length - 1) * map01.tileSize;
+  const scheduledSeconds = waveDefinitions.reduce((campaignSeconds, wave) => {
+    const waveSeconds = Math.max(...wave.groups.map((group) => {
+      const lastSpawn = (group.at ?? 0) + (group.count - 1) * (group.interval ?? 0);
+      return lastSpawn + pathLength / (enemyTypes[group.type].speed * difficulty.enemySpeed);
+    }));
+    return campaignSeconds + waveSeconds + difficulty.preparationSeconds;
+  }, 0);
+  assert.ok(scheduledSeconds >= 15 * 60);
+  assert.ok(scheduledSeconds <= 25 * 60);
 });

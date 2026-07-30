@@ -1,5 +1,6 @@
 export * from "./BuildPanel.js";
 export * from "./contracts.js";
+export * from "./EnemyTooltip.js";
 export * from "./GameOverlays.js";
 export * from "./GameUi.js";
 export * from "./Hud.js";

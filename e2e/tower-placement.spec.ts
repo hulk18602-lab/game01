@@ -2,6 +2,28 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const TILE_SIZE = 48;
 
+type DebugEntity = {
+  readonly id: string;
+  readonly health?: number;
+  readonly targetId?: string | null;
+};
+
+declare global {
+  interface Window {
+    __GAME_DEBUG__?: {
+      readonly towers: readonly DebugEntity[];
+      readonly enemies: readonly DebugEntity[];
+      readonly projectiles: readonly DebugEntity[];
+      readonly lives: number;
+      readonly gold: number;
+      readonly score: number;
+      readonly currentWave: number;
+      readonly phase: string;
+      readonly speed: number;
+    };
+  }
+}
+
 function collectBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on("console", (message) => {
@@ -9,6 +31,19 @@ function collectBrowserErrors(page: Page): string[] {
   });
   page.on("pageerror", (error) => errors.push(`page: ${error.message}`));
   return errors;
+}
+
+async function startNormalGame(page: Page, path = "/"): Promise<void> {
+  await page.goto(path);
+  await expect(page.getByRole("heading", { name: "River Outpost" })).toBeVisible();
+  await page.getByRole("button", { name: "New Game" }).click();
+  await expect(page.getByRole("heading", { name: "Choose difficulty" })).toBeVisible();
+  await page.getByRole("button", { name: /Commander/ }).click();
+  const tutorial = page.getByRole("heading", { name: "Defend the outpost" });
+  if (await tutorial.isVisible()) {
+    await page.getByRole("button", { name: "Begin defense" }).click();
+  }
+  await expect(page.getByRole("button", { name: /^Basic tower/ })).toBeVisible();
 }
 
 async function cellPoint(canvas: Locator, x: number, y: number): Promise<{ x: number; y: number }> {
@@ -59,18 +94,17 @@ async function expectSameElement(locator: Locator, key: string): Promise<void> {
   , key)).toBe(true);
 }
 
-test("build controls remain stable and Basic tower is placed in the browser", async ({ page }) => {
+test("menu, tutorial and stable build controls lead to tower placement", async ({ page }) => {
   const browserErrors = collectBrowserErrors(page);
-  await page.goto("/");
+  await startNormalGame(page);
 
   const canvas = page.locator("canvas.game-canvas");
-  const basic = page.getByRole("button", { name: "Basic tower · 100" });
-  const startWave = page.getByRole("button", { name: "Start wave" });
+  const basic = page.getByRole("button", { name: /^Basic tower/ });
+  const startWave = page.getByRole("button", { name: /Start wave/ });
   const pause = page.getByRole("button", { name: "Pause" });
   const continueButton = page.getByRole("button", { name: "Continue", includeHidden: true });
   const playAgain = page.getByRole("button", { name: "Play again", includeHidden: true });
   await expect(canvas).toBeVisible();
-  await expect(basic).toBeVisible();
 
   await rememberElement(basic, "__basicTowerButton");
   await rememberElement(startWave, "__startWaveButton");
@@ -131,26 +165,106 @@ test("build controls remain stable and Basic tower is placed in the browser", as
 
 test("road, water and rocks reject placement without charging gold", async ({ page }) => {
   const browserErrors = collectBrowserErrors(page);
-  await page.goto("/");
+  await startNormalGame(page);
 
   const canvas = page.locator("canvas.game-canvas");
-  const basic = page.getByRole("button", { name: "Basic tower · 100" });
+  const basic = page.getByRole("button", { name: /^Basic tower/ });
   await basic.click();
   await expect(basic).toHaveAttribute("aria-pressed", "true");
 
   await clickCell(page, canvas, 4, 3);
   await expect(page.getByRole("status")).toHaveText("Towers cannot be built on the enemy route.");
   await expect(page.getByText("Gold: 350", { exact: true })).toBeVisible();
-  await expect(basic).toHaveAttribute("aria-pressed", "true");
 
   await clickCell(page, canvas, 5, 2);
   await expect(page.getByRole("status")).toHaveText("Towers cannot be built on water or rocks.");
   await expect(page.getByText("Gold: 350", { exact: true })).toBeVisible();
-  await expect(basic).toHaveAttribute("aria-pressed", "true");
 
   await clickCell(page, canvas, 12, 2);
   await expect(page.getByRole("status")).toHaveText("Towers cannot be built on water or rocks.");
   await expect(page.getByText("Gold: 350", { exact: true })).toBeVisible();
   await expect(basic).toHaveAttribute("aria-pressed", "true");
+  expect(browserErrors).toEqual([]);
+});
+
+test("tower completes target, projectile, damage, death and reward cycle", async ({ page }) => {
+  const browserErrors = collectBrowserErrors(page);
+  await startNormalGame(page);
+
+  const canvas = page.locator("canvas.game-canvas");
+  await page.getByRole("button", { name: /^Basic tower/ }).click();
+  await clickCell(page, canvas, 4, 4);
+  await expect(page.getByText("Gold: 250", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Start wave/ }).click();
+
+  await page.waitForFunction(() => window.__GAME_DEBUG__ !== undefined);
+  const targetHandle = await page.waitForFunction(
+    () => window.__GAME_DEBUG__?.towers[0]?.targetId ?? null,
+    null,
+    { timeout: 15_000 },
+  );
+  const targetId = await targetHandle.jsonValue() as string;
+  expect(targetId).toBeTruthy();
+
+  await page.waitForFunction(
+    (id) => window.__GAME_DEBUG__?.projectiles.some((projectile) => projectile.targetId === id),
+    targetId,
+    { timeout: 5_000 },
+  );
+
+  await expect.poll(
+    () => page.evaluate(
+      (id) => window.__GAME_DEBUG__?.enemies.find((enemy) => enemy.id === id)?.health ?? null,
+      targetId,
+    ),
+    { timeout: 5_000, intervals: [50] },
+  ).toBe(80);
+
+  await expect.poll(
+    () => page.evaluate(
+      (id) => window.__GAME_DEBUG__?.enemies.some((enemy) => enemy.id === id) ?? true,
+      targetId,
+    ),
+    { timeout: 10_000, intervals: [100] },
+  ).toBe(false);
+
+  expect(await page.evaluate(() => ({
+    gold: window.__GAME_DEBUG__?.gold,
+    lives: window.__GAME_DEBUG__?.lives,
+    currentWave: window.__GAME_DEBUG__?.currentWave,
+  }))).toEqual({ gold: 292, lives: 20, currentWave: 1 });
+  await expect(page.getByText("Gold: 292", { exact: true })).toBeVisible();
+  expect(browserErrors).toEqual([]);
+});
+
+test("short training map completes the full browser happy path", async ({ page }) => {
+  test.setTimeout(45_000);
+  const browserErrors = collectBrowserErrors(page);
+  await startNormalGame(page, "/?scenario=short");
+  const canvas = page.locator("canvas.game-canvas");
+
+  await page.getByRole("button", { name: /^Sniper tower/ }).click();
+  await clickCell(page, canvas, 5, 2);
+  await expect(page.getByText("Gold: 50", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Game speed 3x" }).click();
+  await page.getByRole("button", { name: /Start wave/ }).click();
+
+  await page.waitForFunction(
+    () => window.__GAME_DEBUG__?.phase === "preparing"
+      && window.__GAME_DEBUG__?.currentWave === 1,
+    null,
+    { timeout: 20_000 },
+  );
+  await page.getByRole("button", { name: /Start wave/ }).click();
+  await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 20_000 });
+  expect(await page.evaluate(() => window.__GAME_DEBUG__?.currentWave)).toBe(2);
+
+  await page.getByRole("button", { name: "Play again" }).click();
+  await expect(page.getByText("Wave: 0/2", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { name: "Paused" })).toBeVisible();
+  await page.getByRole("button", { name: "Main menu" }).click();
+  await expect(page.getByRole("heading", { name: "River Outpost" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Resume saved defense" })).toBeEnabled();
   expect(browserErrors).toEqual([]);
 });

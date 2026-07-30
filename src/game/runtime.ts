@@ -1,15 +1,20 @@
 import type { Position, Tower } from "./types.js";
 
 export interface RuntimeTower {
+  readonly kind: "tower";
   readonly id: string;
   readonly type: string;
+  readonly level: number;
   /** The single world-space position consumed by rendering, combat and hit testing. */
   readonly position: Position;
   readonly range: number;
   readonly damage: number;
   readonly fireRate: number;
   readonly projectileSpeed: number;
-  readonly targeting: string;
+  targeting: string;
+  readonly damageType?: string;
+  readonly areaRadius?: number;
+  readonly projectileColor?: string;
   readonly statusEffect?: unknown;
   readonly color: string;
   readonly radius: number;
@@ -20,37 +25,58 @@ export interface RuntimeTower {
 
 export interface RuntimeTowerDefinition {
   readonly name: string;
+  readonly color?: string;
   readonly range: number;
   readonly damage: number;
   readonly fireRate: number;
   readonly projectileSpeed: number;
   readonly targeting: string;
   readonly statusEffect?: unknown;
+  readonly damageType?: string;
+  readonly areaRadius?: number;
+  readonly levels?: readonly {
+    readonly range: number;
+    readonly damage: number;
+    readonly fireRate: number;
+    readonly projectileSpeed: number;
+    readonly statusEffect?: unknown;
+    readonly areaRadius?: number;
+  }[];
 }
 
-type RenderEntity = Record<string, any>;
+type RenderEntity = RuntimeTower | Record<string, unknown>;
 
 export function runtimeTowerColor(type: string): string {
-  return type === "frost" ? "#67e8f9" : type === "rapid" ? "#a78bfa" : "#60a5fa";
+  if (type === "frost") return "#67e8f9";
+  if (type === "rapid") return "#a78bfa";
+  if (type === "cannon") return "#fb923c";
+  if (type === "sniper") return "#f472b6";
+  return "#60a5fa";
 }
 
 export function createRuntimeTower(
-  tower: Pick<Tower, "id" | "type" | "level">,
+  tower: Pick<Tower, "id" | "type" | "level" | "targeting">,
   definition: RuntimeTowerDefinition,
   position: Position,
 ): RuntimeTower {
+  const level = definition.levels?.[tower.level] ?? definition;
   return {
+    kind: "tower",
     id: tower.id,
     type: tower.type,
+    level: tower.level,
     position: { ...position },
-    range: definition.range * (1 + tower.level * 0.12),
-    damage: definition.damage * (1 + tower.level * 0.5),
-    fireRate: definition.fireRate,
-    projectileSpeed: definition.projectileSpeed,
-    targeting: definition.targeting,
-    statusEffect: definition.statusEffect,
-    color: runtimeTowerColor(tower.type),
-    radius: 18,
+    range: level.range,
+    damage: level.damage,
+    fireRate: level.fireRate,
+    projectileSpeed: level.projectileSpeed,
+    targeting: tower.targeting ?? definition.targeting,
+    statusEffect: level.statusEffect,
+    damageType: definition.damageType,
+    areaRadius: level.areaRadius ?? definition.areaRadius,
+    projectileColor: definition.color,
+    color: definition.color ?? runtimeTowerColor(tower.type),
+    radius: 18 + tower.level * 2,
     label: definition.name,
   };
 }
@@ -65,9 +91,15 @@ export function createRenderEntities(
     ...towers,
     ...enemies.map((enemy) => ({
       ...enemy,
-      color: enemy.type === "tank" ? "#ef4444" : enemy.type === "runner" ? "#fbbf24" : "#fb7185",
-      radius: enemy.type === "tank" ? 17 : 12,
+      kind: "enemy",
+      color: enemy.color,
+      radius: enemy.radius,
     })),
-    ...projectiles.map((projectile) => ({ ...projectile, color: "#f8fafc", radius: 4 })),
+    ...projectiles.map((projectile) => ({
+      ...projectile,
+      kind: "projectile",
+      color: projectile.color ?? "#f8fafc",
+      radius: 4,
+    })),
   ];
 }

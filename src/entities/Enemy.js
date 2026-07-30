@@ -9,32 +9,62 @@ export class Enemy {
 
     this.id = overrides.id ?? `enemy-${nextEnemyId++}`;
     this.type = definition.id;
+    this.name = definition.name ?? definition.id;
+    this.shortLabel = definition.shortLabel ?? definition.id.slice(0, 1).toUpperCase();
+    this.color = definition.color ?? "#fb7185";
+    this.radius = definition.radius ?? 12;
     this.maxHealth = overrides.health ?? definition.health;
-    this.health = this.maxHealth;
+    this.health = Math.min(this.maxHealth, overrides.currentHealth ?? this.maxHealth);
     this.speed = overrides.speed ?? definition.speed;
     this.reward = overrides.reward ?? definition.reward;
     this.baseDamage = overrides.baseDamage ?? definition.baseDamage;
+    this.armor = overrides.armor ?? definition.armor ?? 0;
+    this.regeneration = overrides.regeneration ?? definition.regeneration ?? 0;
+    this.boss = overrides.boss ?? definition.boss ?? false;
+    this.bossPhase = overrides.bossPhase ?? 1;
     this.progress = clampProgress(overrides.progress ?? 0);
-    this.position = { x: 0, y: 0 };
+    this.position = { ...(overrides.position ?? { x: 0, y: 0 }) };
+    this.speedMultiplier = 1;
+    this.abilitySpeedMultiplier = 1;
+    this.statusEffects = [...(overrides.statusEffects ?? [])];
+    this.dead = false;
     this.reachedBase = false;
     this.pendingRemoval = false;
     this.removalReason = null;
   }
 
-  takeDamage(amount) {
+  takeDamage(amount, damageType = 'true') {
     if (!Number.isFinite(amount) || amount < 0) throw new RangeError('Damage must be a non-negative number');
-    this.health = Math.max(0, this.health - amount);
-    if (this.health === 0) this.markForRemoval('destroyed');
+    if (!this.isAlive) return this.health;
+    const armorEffect = damageType === 'physical'
+      ? this.armor
+      : damageType === 'explosive'
+        ? this.armor * 0.35
+        : 0;
+    const applied = amount * Math.max(0, 1 - armorEffect);
+    this.health = Math.max(0, this.health - applied);
+    if (this.health === 0) {
+      this.dead = true;
+      this.markForRemoval('destroyed');
+    }
+    return this.health;
+  }
+
+  heal(amount) {
+    if (!Number.isFinite(amount) || amount < 0) throw new RangeError('Healing must be a non-negative number');
+    if (!this.isAlive) return this.health;
+    this.health = Math.min(this.maxHealth, this.health + amount);
     return this.health;
   }
 
   markForRemoval(reason = 'removed') {
+    if (this.pendingRemoval) return;
     this.pendingRemoval = true;
     this.removalReason = reason;
   }
 
   get isAlive() {
-    return this.health > 0 && !this.pendingRemoval;
+    return this.health > 0 && !this.dead && !this.pendingRemoval && !this.reachedBase;
   }
 }
 

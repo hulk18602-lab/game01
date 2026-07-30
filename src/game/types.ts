@@ -18,14 +18,18 @@ export interface TowerLevel {
 
 export interface TowerDefinition {
   readonly type: string;
+  readonly defaultTargeting?: TargetingMode;
   readonly levels: readonly TowerLevel[];
 }
+
+export type TargetingMode = "first" | "nearest" | "strongest";
 
 export interface Tower {
   readonly id: string;
   readonly ownerId: string;
   readonly type: string;
   level: number;
+  targeting: TargetingMode;
   readonly position: Position;
 }
 

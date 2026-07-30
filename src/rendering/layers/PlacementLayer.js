@@ -1,6 +1,20 @@
 /** Renders build-mode feedback without applying placement rules. */
 export class PlacementLayer {
   render(context, state) {
+    const selected = state.selectedTowerRange;
+    if (selected) {
+      context.globalAlpha = 0.11;
+      context.fillStyle = "#f8fafc";
+      context.beginPath();
+      context.arc(selected.position.x, selected.position.y, selected.range, 0, Math.PI * 2);
+      context.fill();
+      context.globalAlpha = 0.48;
+      context.strokeStyle = "#f8fafc";
+      context.lineWidth = 2;
+      context.stroke();
+      context.globalAlpha = 1;
+    }
+
     const preview = state.placementPreview;
     if (!preview) return;
 
