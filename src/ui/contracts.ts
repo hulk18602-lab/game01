@@ -20,6 +20,12 @@ export interface HudView {
   readonly paused: boolean;
 }
 
+export interface AudioSettingsView {
+  readonly enabled: boolean;
+  readonly musicVolume: number;
+  readonly sfxVolume: number;
+}
+
 export interface BuildOptionView {
   readonly type: string;
   readonly name: string;
@@ -95,6 +101,7 @@ export type OverlayView =
 
 export interface UiView {
   readonly hud: HudView;
+  readonly audio: AudioSettingsView;
   readonly buildOptions: readonly BuildOptionView[];
   readonly selectedTower: SelectedTowerView | null;
   readonly enemyTooltip: EnemyTooltipView | null;
@@ -117,11 +124,18 @@ export type UiCommand =
   | { readonly type: "set-targeting"; readonly towerId: string; readonly mode: TargetingMode }
   | { readonly type: "toggle-pause" }
   | { readonly type: "set-speed"; readonly speed: GameSpeed }
+  | {
+    readonly type: "set-audio";
+    readonly enabled?: boolean;
+    readonly musicVolume?: number;
+    readonly sfxVolume?: number;
+  }
   | { readonly type: "restart-game" }
   | { readonly type: "return-menu" };
 
 export interface UiSelectors<State> {
   hud(state: State): HudView;
+  audio(state: State): AudioSettingsView;
   buildOptions(state: State): readonly BuildOptionView[];
   selectedTower(state: State): SelectedTowerView | null;
   enemyTooltip(state: State): EnemyTooltipView | null;
@@ -140,6 +154,7 @@ export type CommandDispatcher = (command: UiCommand) => void;
 export function selectUiView<State>(state: State, selectors: UiSelectors<State>): UiView {
   return Object.freeze({
     hud: selectors.hud(state),
+    audio: selectors.audio(state),
     buildOptions: selectors.buildOptions(state),
     selectedTower: selectors.selectedTower(state),
     enemyTooltip: selectors.enemyTooltip(state),

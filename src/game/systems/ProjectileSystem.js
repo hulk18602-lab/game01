@@ -1,80 +1,91 @@
-import { applyDamage, entityPosition, isAlive, removeInPlace } from './systemUtils.js';
+import { applyDamage, entityPosition, isAlive } from './systemUtils.js';
 
 let nextProjectileId = 1;
 
-/** Moves projectiles and applies hits. Rewards are intentionally not handled here. */
+const createProjectile = () => ({
+  id: '',
+  sourceId: '',
+  targetId: '',
+  position: { x: 0, y: 0 },
+  damage: 0,
+  damageType: 'physical',
+  speed: 0,
+  areaRadius: 0,
+  color: '#f8fafc',
+  statusEffect: null,
+  spent: true,
+});
+
+/** Moves projectiles and applies hits. Active objects are recycled through a bounded pool. */
 export class ProjectileSystem {
-  constructor({ hitRadius = 4 } = {}) {
+  constructor({ hitRadius = 4, poolCapacity = 256 } = {}) {
     this.hitRadius = hitRadius;
+    this.poolCapacity = poolCapacity;
     this.projectiles = [];
     this.events = [];
+    this.pool = Array.from({ length: poolCapacity }, createProjectile);
+    this.enemiesById = new Map();
   }
 
   spawn(projectile) {
-    const position = entityPosition(projectile);
-    const created = {
-      id: `projectile-${nextProjectileId++}`,
-      ...projectile,
-      position: { ...position },
-      spent: false,
-    };
+    const sourcePosition = entityPosition(projectile);
+    const created = this.pool.pop() ?? createProjectile();
+    created.id = `projectile-${nextProjectileId++}`;
+    created.sourceId = projectile.sourceId;
+    created.targetId = projectile.targetId;
+    created.position.x = sourcePosition.x;
+    created.position.y = sourcePosition.y;
+    created.damage = projectile.damage;
+    created.damageType = projectile.damageType ?? 'physical';
+    created.speed = projectile.speed;
+    created.areaRadius = projectile.areaRadius ?? 0;
+    created.color = projectile.color ?? '#f8fafc';
+    created.statusEffect = projectile.statusEffect ?? null;
+    created.spent = false;
     this.projectiles.push(created);
     this.events.push({
       type: 'shot',
       sourceId: created.sourceId,
       targetId: created.targetId,
-      position: { ...created.position },
+      position: { x: created.position.x, y: created.position.y },
+      damageType: created.damageType,
     });
     return created;
   }
 
   update(deltaSeconds, enemies, statusEffectSystem) {
     if (deltaSeconds < 0) throw new RangeError('deltaSeconds must not be negative');
-    const enemiesById = new Map(enemies.map((enemy) => [enemy.id, enemy]));
+    this.enemiesById.clear();
+    for (const enemy of enemies) this.enemiesById.set(enemy.id, enemy);
 
     for (const projectile of this.projectiles) {
-      const target = enemiesById.get(projectile.targetId);
+      const target = this.enemiesById.get(projectile.targetId);
       if (!isAlive(target)) {
         projectile.spent = true;
         continue;
       }
 
       const targetPosition = entityPosition(target);
-      const projectilePosition = entityPosition(projectile);
-      const dx = targetPosition.x - projectilePosition.x;
-      const dy = targetPosition.y - projectilePosition.y;
+      const dx = targetPosition.x - projectile.position.x;
+      const dy = targetPosition.y - projectile.position.y;
       const distance = Math.hypot(dx, dy);
       const travel = projectile.speed * deltaSeconds;
       if (distance <= travel + this.hitRadius) {
-        projectile.position = { ...targetPosition };
-        const victims = projectile.areaRadius > 0
-          ? enemies.filter((enemy) =>
-            isAlive(enemy) && Math.sqrt(
-              (entityPosition(enemy).x - targetPosition.x) ** 2
-              + (entityPosition(enemy).y - targetPosition.y) ** 2,
-            ) <= projectile.areaRadius)
-          : [target];
-        for (const victim of victims) {
-          const healthBefore = victim.health;
-          const healthAfter = applyDamage(victim, projectile.damage, projectile.damageType);
-          this.events.push({
-            type: 'hit',
-            sourceId: projectile.sourceId,
-            targetId: victim.id,
-            position: { ...entityPosition(victim) },
-            damage: healthBefore - healthAfter,
-            areaRadius: projectile.areaRadius ?? 0,
-          });
-          if (healthAfter === 0) {
-            this.events.push({
-              type: 'enemy-death',
-              sourceId: projectile.sourceId,
-              targetId: victim.id,
-              position: { ...entityPosition(victim) },
-            });
-          } else if (projectile.statusEffect && statusEffectSystem) {
-            statusEffectSystem.apply(victim, projectile.statusEffect);
+        projectile.position.x = targetPosition.x;
+        projectile.position.y = targetPosition.y;
+        if (projectile.areaRadius > 0) {
+          const radiusSquared = projectile.areaRadius ** 2;
+          for (const enemy of enemies) {
+            if (!isAlive(enemy)) continue;
+            const enemyPosition = entityPosition(enemy);
+            const areaX = enemyPosition.x - targetPosition.x;
+            const areaY = enemyPosition.y - targetPosition.y;
+            if (areaX * areaX + areaY * areaY <= radiusSquared) {
+              this.applyHit(projectile, enemy, statusEffectSystem);
+            }
           }
+        } else {
+          this.applyHit(projectile, target, statusEffectSystem);
         }
         projectile.spent = true;
       } else if (distance > 0) {
@@ -83,9 +94,41 @@ export class ProjectileSystem {
       }
     }
 
-    removeInPlace(this.projectiles, (projectile) =>
-      projectile.spent || !enemiesById.has(projectile.targetId));
+    for (let index = this.projectiles.length - 1; index >= 0; index -= 1) {
+      const projectile = this.projectiles[index];
+      if (!projectile.spent && this.enemiesById.has(projectile.targetId)) continue;
+      this.projectiles.splice(index, 1);
+      projectile.spent = true;
+      projectile.statusEffect = null;
+      if (this.pool.length < this.poolCapacity) this.pool.push(projectile);
+    }
     return this.projectiles;
+  }
+
+  applyHit(projectile, victim, statusEffectSystem) {
+    const healthBefore = victim.health;
+    const healthAfter = applyDamage(victim, projectile.damage, projectile.damageType);
+    const position = entityPosition(victim);
+    this.events.push({
+      type: 'hit',
+      sourceId: projectile.sourceId,
+      targetId: victim.id,
+      position: { x: position.x, y: position.y },
+      damage: healthBefore - healthAfter,
+      damageType: projectile.damageType,
+      areaRadius: projectile.areaRadius,
+    });
+    if (healthAfter === 0) {
+      this.events.push({
+        type: 'enemy-death',
+        sourceId: projectile.sourceId,
+        targetId: victim.id,
+        position: { x: position.x, y: position.y },
+        damageType: projectile.damageType,
+      });
+    } else if (projectile.statusEffect && statusEffectSystem) {
+      statusEffectSystem.apply(victim, projectile.statusEffect);
+    }
   }
 
   drainEvents() {

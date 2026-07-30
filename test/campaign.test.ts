@@ -4,6 +4,7 @@ import testMap from "../src/content/maps/mapTest.js";
 import type { WaveDefinition } from "../src/game/CampaignSession.js";
 import { CampaignSession } from "../src/game/CampaignSession.js";
 import { GameStorage, type StorageLike } from "../src/game/persistence/GameStorage.js";
+import { CombatEffectPool } from "../src/rendering/CombatEffectPool.js";
 
 class MemoryStorage implements StorageLike {
   readonly values = new Map<string, string>();
@@ -177,6 +178,51 @@ test("versioned save/load restores an unfinished game and rejects corrupted data
   assert.equal(corrupted.savedGameAvailable, false);
   assert.equal(corrupted.continueGame(), false);
   assert.equal(corrupted.phase, "menu");
+});
+
+test("sound settings persist defensively without affecting campaign state", () => {
+  const memory = new MemoryStorage();
+  const original = session([wave("wave-1", "runner", 1)], memory);
+  original.setAudioSettings({ enabled: false, musicVolume: 0.21, sfxVolume: 0.73 });
+  const restored = session([wave("wave-1", "runner", 1)], memory);
+  assert.deepEqual(restored.audioSettings, {
+    enabled: false,
+    musicVolume: 0.21,
+    sfxVolume: 0.73,
+  });
+  restored.setAudioSettings({ musicVolume: Number.NaN, sfxVolume: 4 });
+  assert.deepEqual(restored.audioSettings, {
+    enabled: false,
+    musicVolume: 0.21,
+    sfxVolume: 1,
+  });
+  assert.equal(restored.phase, "menu");
+});
+
+test("combat presentation effects stay inside a fixed pool and honor reduced motion", () => {
+  const effects = new CombatEffectPool(32);
+  const stableArray = effects.effects;
+  for (let index = 0; index < 100; index += 1) {
+    effects.emit({
+      type: "hit",
+      position: { x: 24, y: 24 },
+      damage: 120,
+      areaRadius: 72,
+    });
+  }
+  assert.equal(effects.effects, stableArray);
+  assert.equal(effects.effects.length, 32);
+  assert.ok(effects.shakeIntensity > 0);
+  effects.setReducedMotion(true);
+  effects.emit({
+    type: "hit",
+    position: { x: 24, y: 24 },
+    damage: 200,
+    areaRadius: 90,
+  });
+  assert.equal(effects.shakeIntensity, 0);
+  effects.update(2);
+  assert.equal(effects.effects.length, 0);
 });
 
 test("a deliberate mixed-tower strategy can finish all twelve normal waves", () => {

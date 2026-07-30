@@ -1,4 +1,6 @@
 import type { CommandDispatcher, HudView } from "./contracts.js";
+import type { AudioSettingsView } from "./contracts.js";
+import { AudioControls } from "./AudioControls.js";
 import { button, element } from "./dom.js";
 
 export class Hud {
@@ -16,12 +18,15 @@ export class Hud {
   readonly #waveButton: HTMLButtonElement;
   readonly #pauseButton: HTMLButtonElement;
   readonly #speedButtons = new Map<number, HTMLButtonElement>();
+  readonly #audio: AudioControls;
+  #signature = "";
 
   constructor(dispatch: CommandDispatcher) {
     this.element.setAttribute("aria-label", "Game status");
     this.#waveButton = button("Start wave", () => dispatch({ type: "start-wave" }));
     this.#waveButton.classList.add("game-ui__button--primary");
     this.#pauseButton = button("Pause", () => dispatch({ type: "toggle-pause" }));
+    this.#audio = new AudioControls(dispatch, true);
     const speedControls = element("div", "game-ui__speed");
     speedControls.setAttribute("aria-label", "Game speed");
     for (const speed of [1, 2, 3] as const) {
@@ -38,10 +43,31 @@ export class Hud {
       this.#waveButton,
       this.#pauseButton,
       speedControls,
+      this.#audio.element,
     );
   }
 
-  render(view: HudView): void {
+  render(view: HudView, audio: AudioSettingsView): void {
+    this.#audio.render(audio);
+    const signature = [
+      view.visible,
+      view.lives,
+      view.money,
+      view.score,
+      view.wave,
+      view.totalWaves,
+      view.enemiesRemaining,
+      view.waveInProgress,
+      Math.ceil(view.countdown),
+      view.canStartWave,
+      view.earlyStartBonus,
+      view.nextWaveTitle,
+      view.nextWaveComposition,
+      view.speed,
+      view.paused,
+    ].join("|");
+    if (signature === this.#signature) return;
+    this.#signature = signature;
     this.element.hidden = !view.visible;
     this.#lives.textContent = `Lives: ${view.lives}`;
     this.#money.textContent = `Gold: ${view.money}`;

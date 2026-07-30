@@ -2,9 +2,13 @@ export class EntityLayer {
   render(context, state) {
     if (state.runtimeTowers || state.enemies || state.projectiles) {
       const enemies = state.enemies ?? [];
-      for (const tower of state.runtimeTowers ?? []) this.drawTower(context, tower, enemies);
-      for (const enemy of enemies) this.drawEnemy(context, enemy);
-      for (const projectile of state.projectiles ?? []) this.drawProjectile(context, projectile);
+      const time = state.visualTime ?? 0;
+      const reducedMotion = state.reducedMotion === true;
+      for (const tower of state.runtimeTowers ?? []) {
+        this.drawTower(context, tower, enemies, time, reducedMotion);
+      }
+      for (const enemy of enemies) this.drawEnemy(context, enemy, time, reducedMotion);
+      for (const projectile of state.projectiles ?? []) this.drawProjectile(context, projectile, time);
       return;
     }
 
@@ -31,13 +35,14 @@ export class EntityLayer {
     }
   }
 
-  drawTower(context, tower, enemies) {
+  drawTower(context, tower, enemies, time, reducedMotion) {
     const { position } = tower;
     const radius = tower.radius ?? 18;
     const target = enemies.find((enemy) => enemy.id === tower.targetId);
+    const towerSeed = Number.parseInt(tower.id.replace(/\D/g, ""), 10) || 1;
     const angle = target
       ? Math.atan2(target.position.y - position.y, target.position.x - position.x)
-      : -Math.PI / 2;
+      : -Math.PI / 2 + (reducedMotion ? 0 : Math.sin(time * 0.7 + towerSeed) * 0.55);
 
     context.save();
     context.translate(position.x, position.y);
@@ -50,16 +55,24 @@ export class EntityLayer {
     context.beginPath();
     context.arc(0, 0, radius + 3, 0, Math.PI * 2);
     context.fill();
+    context.strokeStyle = tower.level === 2 ? "#fff0a6" : tower.level === 1 ? "#f8fafc" : "#263343";
+    context.lineWidth = tower.level + 1;
+    context.beginPath();
+    context.arc(0, 0, radius - 1, 0, Math.PI * 2);
+    context.stroke();
     context.fillStyle = tower.color ?? "#60a5fa";
 
     if (tower.type === "rapid") {
       context.fillRect(-radius * 0.7, -radius * 0.55, radius * 1.4, radius * 1.1);
     } else if (tower.type === "frost") {
+      context.save();
+      if (!reducedMotion) context.rotate(time * 0.9 + towerSeed);
       this.polygon(context, 6, radius, Math.PI / 6);
       context.fill();
       context.strokeStyle = "#ecfeff";
       context.lineWidth = 2;
       context.stroke();
+      context.restore();
     } else if (tower.type === "cannon") {
       context.beginPath();
       context.arc(0, 0, radius * 0.82, 0, Math.PI * 2);
@@ -74,26 +87,45 @@ export class EntityLayer {
       context.fill();
     }
 
+    for (let marker = 0; marker <= tower.level; marker += 1) {
+      const markerAngle = Math.PI * 0.7 + marker * 0.52;
+      context.fillStyle = tower.level === 2 ? "#fff3b0" : "#dbeafe";
+      context.beginPath();
+      context.arc(
+        Math.cos(markerAngle) * (radius - 3),
+        Math.sin(markerAngle) * (radius - 3),
+        2.2,
+        0,
+        Math.PI * 2,
+      );
+      context.fill();
+    }
+
     context.rotate(angle);
     context.strokeStyle = "#172033";
     context.lineCap = "round";
     context.lineWidth = tower.type === "cannon" ? 10 : tower.type === "sniper" ? 5 : 6;
     const barrelLength = tower.type === "sniper" ? radius + 20 : radius + 11;
-    const doubleBarrel = tower.type === "rapid";
-    for (const offset of doubleBarrel ? [-4, 4] : [0]) {
+    const barrelCount = tower.type === "rapid" ? 2 : 1;
+    for (let barrel = 0; barrel < barrelCount; barrel += 1) {
+      const offset = barrelCount === 1 ? 0 : barrel === 0 ? -4 : 4;
       context.beginPath();
       context.moveTo(radius * 0.25, offset);
       context.lineTo(barrelLength, offset);
       context.stroke();
     }
+    context.fillStyle = tower.type === "frost" ? "#cffafe" : tower.type === "cannon" ? "#fdba74" : "#94a3b8";
+    context.beginPath();
+    context.arc(barrelLength, 0, tower.type === "cannon" ? 6 : 3.5, 0, Math.PI * 2);
+    context.fill();
     context.restore();
   }
 
-  drawEnemy(context, enemy) {
+  drawEnemy(context, enemy, time, reducedMotion) {
     if (!enemy.position) return;
     const { position } = enemy;
     const radius = enemy.radius ?? 12;
-    const bob = Math.sin((enemy.progress ?? 0) * 70) * 1.5;
+    const bob = reducedMotion ? 0 : Math.sin((enemy.progress ?? 0) * 70 + time * 7) * 1.5;
     context.save();
     context.translate(position.x, position.y + bob);
     context.fillStyle = "rgba(15, 23, 42, .35)";
@@ -115,12 +147,54 @@ export class EntityLayer {
     } else if (enemy.type === "armored") {
       this.polygon(context, 6, radius, 0);
     } else if (enemy.type === "boss") {
-      this.polygon(context, 8, radius, (enemy.progress ?? 0) * Math.PI * 2);
+      this.polygon(context, 8, radius, reducedMotion ? 0 : time * 0.35);
     } else {
       context.arc(0, 0, radius, 0, Math.PI * 2);
     }
     context.fill();
     context.stroke();
+
+    if (enemy.type === "runner") {
+      context.strokeStyle = "#fef3c7";
+      context.lineWidth = 2;
+      const stride = reducedMotion ? 0 : Math.sin(time * 13 + (enemy.progress ?? 0) * 80) * 4;
+      context.beginPath();
+      context.moveTo(-radius * 0.35, radius * 0.45);
+      context.lineTo(-radius * 0.6 + stride, radius * 0.95);
+      context.moveTo(radius * 0.05, radius * 0.42);
+      context.lineTo(radius * 0.3 - stride, radius * 0.92);
+      context.stroke();
+    } else if (enemy.type === "tank") {
+      context.fillStyle = "#f8fafc";
+      for (let rivet = 0; rivet < 3; rivet += 1) {
+        context.beginPath();
+        context.arc(-radius * 0.42 + rivet * radius * 0.42, -radius * 0.35, 1.7, 0, Math.PI * 2);
+        context.fill();
+      }
+    } else if (enemy.type === "armored") {
+      context.strokeStyle = "rgba(241, 245, 249, .75)";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(-radius * 0.62, -radius * 0.18);
+      context.lineTo(0, -radius * 0.62);
+      context.lineTo(radius * 0.62, -radius * 0.18);
+      context.stroke();
+    } else if (enemy.type === "regenerator") {
+      context.strokeStyle = "#dcfce7";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(-radius * 0.45, 0);
+      context.lineTo(radius * 0.45, 0);
+      context.moveTo(0, -radius * 0.45);
+      context.lineTo(0, radius * 0.45);
+      context.stroke();
+    } else if (enemy.type === "boss") {
+      context.strokeStyle = "#f5d0fe";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(0, 0, radius * 0.64, 0, Math.PI * 2);
+      context.stroke();
+    }
 
     context.fillStyle = "#f8fafc";
     context.font = `bold ${Math.max(10, radius)}px system-ui`;
@@ -138,15 +212,42 @@ export class EntityLayer {
     this.drawHealthBar(context, enemy, position, radius);
   }
 
-  drawProjectile(context, projectile) {
+  drawProjectile(context, projectile, time) {
     if (!projectile.position) return;
     context.save();
+    context.translate(projectile.position.x, projectile.position.y);
     context.shadowBlur = 10;
     context.shadowColor = projectile.color ?? "#f8fafc";
     context.fillStyle = projectile.color ?? "#f8fafc";
-    context.beginPath();
-    context.arc(projectile.position.x, projectile.position.y, projectile.radius ?? 4, 0, Math.PI * 2);
-    context.fill();
+    if (projectile.damageType === "cold") {
+      context.rotate(time * 5);
+      context.beginPath();
+      context.moveTo(0, -7);
+      context.lineTo(4, 0);
+      context.lineTo(0, 7);
+      context.lineTo(-4, 0);
+      context.closePath();
+      context.fill();
+    } else if ((projectile.areaRadius ?? 0) > 0) {
+      context.beginPath();
+      context.arc(0, 0, 6, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = "#fff7ed";
+      context.lineWidth = 2;
+      context.stroke();
+    } else if (projectile.damage >= 80) {
+      context.strokeStyle = projectile.color ?? "#f8fafc";
+      context.lineWidth = 3;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(-10, 0);
+      context.lineTo(5, 0);
+      context.stroke();
+    } else {
+      context.beginPath();
+      context.arc(0, 0, projectile.radius ?? 4, 0, Math.PI * 2);
+      context.fill();
+    }
     context.restore();
   }
 

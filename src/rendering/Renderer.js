@@ -24,6 +24,9 @@ export class Renderer {
     for (const layer of this.layers) {
       context.save();
       camera.apply(context);
+      if (state.shakeOffset) {
+        context.translate(state.shakeOffset.x, state.shakeOffset.y);
+      }
       layer.render(context, state, camera);
       context.restore();
     }

@@ -22,6 +22,7 @@ export class SelectedTowerPanel {
   readonly #sell: HTMLButtonElement;
   readonly #targeting = new Map<TargetingMode, HTMLButtonElement>();
   #towerId: string | null = null;
+  #signature = "";
 
   constructor(dispatch: CommandDispatcher) {
     this.#dispatch = dispatch;
@@ -56,6 +57,25 @@ export class SelectedTowerPanel {
   }
 
   render(tower: SelectedTowerView | null): void {
+    const signature = tower
+      ? [
+        tower.id,
+        tower.name,
+        tower.level,
+        tower.damage,
+        tower.range,
+        tower.fireRate,
+        tower.targeting,
+        tower.upgradeCost,
+        tower.upgradeAffordable,
+        tower.upgradeDelta?.damage,
+        tower.upgradeDelta?.range,
+        tower.upgradeDelta?.fireRate,
+        tower.sellValue,
+      ].join("|")
+      : "none";
+    if (signature === this.#signature) return;
+    this.#signature = signature;
     this.element.hidden = tower === null;
     if (!tower) {
       this.#towerId = null;

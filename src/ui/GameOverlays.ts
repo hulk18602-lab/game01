@@ -1,8 +1,10 @@
 import type {
   CommandDispatcher,
   DifficultyOptionView,
+  AudioSettingsView,
   OverlayView,
 } from "./contracts.js";
+import { AudioControls } from "./AudioControls.js";
 import { button, element } from "./dom.js";
 
 export class GameOverlays {
@@ -20,6 +22,8 @@ export class GameOverlays {
   readonly #playAgain: HTMLButtonElement;
   readonly #menu: HTMLButtonElement;
   readonly #difficultyButtons = new Map<string, HTMLButtonElement>();
+  readonly #audio: AudioControls;
+  #signature = "";
 
   constructor(dispatch: CommandDispatcher) {
     this.#dispatch = dispatch;
@@ -33,6 +37,7 @@ export class GameOverlays {
     this.#continue = button("Continue", () => this.#dispatch({ type: "toggle-pause" }));
     this.#playAgain = button("Play again", () => this.#dispatch({ type: "restart-game" }));
     this.#menu = button("Main menu", () => this.#dispatch({ type: "return-menu" }));
+    this.#audio = new AudioControls(dispatch);
     this.#controls.append(
       this.#newGame,
       this.#resumeSave,
@@ -42,11 +47,24 @@ export class GameOverlays {
       this.#menu,
     );
     const panel = element("section", "game-ui__overlay-panel");
-    panel.append(this.#eyebrow, this.#title, this.#detail, this.#best, this.#controls);
+    panel.append(this.#eyebrow, this.#title, this.#detail, this.#best, this.#controls, this.#audio.element);
     this.element.append(panel);
   }
 
-  render(view: OverlayView): void {
+  render(view: OverlayView, audio: AudioSettingsView): void {
+    this.#audio.render(audio);
+    let signature = view.kind;
+    if (view.kind === "menu") signature += `|${view.continueAvailable}|${view.bestScore}`;
+    if (view.kind === "difficulty") {
+      for (const option of view.options) {
+        signature += `|${option.id}:${option.startingGold}:${option.lives}`;
+      }
+    }
+    if (view.kind === "victory") signature += `|${view.score}|${view.bestScore}`;
+    if (view.kind === "defeat") signature += `|${view.wave}|${view.score}`;
+    if (signature === this.#signature) return;
+    this.#signature = signature;
+    this.element.dataset.state = view.kind;
     this.element.hidden = view.kind === "none";
     this.#hideControls();
     this.#eyebrow.hidden = false;

@@ -2,6 +2,7 @@ import map01 from "../content/maps/map01.js";
 import testMap from "../content/maps/mapTest.js";
 import testWaves from "../content/waves/testWaveDefinitions.js";
 import { GameLoop } from "../core/GameLoop.js";
+import { AudioManager } from "../audio/AudioManager.js";
 import {
   CampaignSession,
   type CampaignRuntime,
@@ -12,7 +13,7 @@ import {
   type WaveDefinition,
 } from "../game/CampaignSession.js";
 import type { GameSpeed } from "../game/GameFlow.js";
-import type { Position, RuntimeTower, TargetingMode } from "../game/index.js";
+import type { Position, RuntimeTower } from "../game/index.js";
 import { CanvasCoordinateConverter, KeyboardInputAdapter, PointerInputAdapter } from "../input/index.js";
 import {
   Camera,
@@ -36,6 +37,9 @@ interface RenderState {
   effects: readonly VisualEffect[];
   placementPreview: CampaignRuntime["placementPreview"];
   selectedTowerRange: { readonly position: Position; readonly range: number } | null;
+  visualTime: number;
+  reducedMotion: boolean;
+  shakeOffset: { x: number; y: number };
 }
 
 interface CanvasLayer {
@@ -88,6 +92,12 @@ interface GameDebugApi {
   readonly currentWave: number;
   readonly phase: string;
   readonly speed: GameSpeed;
+  readonly worldWidth: number;
+  readonly worldHeight: number;
+  readonly canvasWidth: number;
+  readonly canvasHeight: number;
+  readonly reducedMotion: boolean;
+  readonly activeEffects: number;
 }
 
 declare global {
@@ -107,6 +117,18 @@ export class GameApplication {
   readonly #pointer: PointerInputAdapter;
   readonly #keyboard: KeyboardInputAdapter;
   readonly #screen: CanvasCoordinateConverter;
+  readonly #audio: AudioManager;
+  readonly #unsubscribePresentation: () => void;
+  readonly #camera: InstanceType<typeof Camera>;
+  readonly #worldWidth: number;
+  readonly #worldHeight: number;
+  readonly #motionQuery: MediaQueryList | null;
+  readonly #visualStartedAt = performance.now();
+  readonly #handleResize = (): void => this.#resizeCanvas();
+  readonly #handleMotionChange = (event: MediaQueryListEvent): void => {
+    this.#session.setReducedMotion(event.matches);
+    this.#render();
+  };
   readonly #renderState: RenderState = {
     runtimeTowers: [],
     enemies: [],
@@ -114,6 +136,9 @@ export class GameApplication {
     effects: [],
     placementPreview: null,
     selectedTowerRange: null,
+    visualTime: 0,
+    reducedMotion: false,
+    shakeOffset: { x: 0, y: 0 },
   };
 
   constructor(root: HTMLElement) {
@@ -124,9 +149,15 @@ export class GameApplication {
       map: (shortScenario ? testMap : map01) as unknown as MapDefinition,
       waves: (shortScenario ? testWaves : undefined) as unknown as readonly WaveDefinition[] | undefined,
     });
+    this.#audio = new AudioManager(this.#session.audioSettings);
+    this.#unsubscribePresentation = this.#session.subscribePresentation(
+      (cue) => this.#audio.play(cue),
+    );
 
     const worldWidth = this.#session.map.width * this.#session.map.tileSize;
     const worldHeight = this.#session.map.height * this.#session.map.tileSize;
+    this.#worldWidth = worldWidth;
+    this.#worldHeight = worldHeight;
     this.#canvas.className = "game-canvas";
     this.#canvas.width = worldWidth;
     this.#canvas.height = worldHeight;
@@ -135,7 +166,7 @@ export class GameApplication {
     const context = this.#canvas.getContext("2d");
     if (!context) throw new Error("Canvas 2D is not supported");
 
-    const camera = new Camera({
+    this.#camera = new Camera({
       viewportWidth: worldWidth,
       viewportHeight: worldHeight,
     });
@@ -144,7 +175,7 @@ export class GameApplication {
     const DebugLayerAdapter = DebugLayer as unknown as DebugLayerConstructor;
     this.#renderer = new RendererAdapter({
       context,
-      camera,
+      camera: this.#camera,
       layers: [
         new MapLayerAdapter({ grid: this.#session.grid, converter: this.#session.converter }),
         new PlacementLayer() as unknown as CanvasLayer,
@@ -178,12 +209,19 @@ export class GameApplication {
     this.#keyboard = new KeyboardInputAdapter(window, (event) => {
       if (event.phase === "down" && !event.repeat) this.#onKey(event.code);
     });
+    this.#motionQuery = typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
+    this.#session.setReducedMotion(this.#motionQuery?.matches ?? false);
+    this.#motionQuery?.addEventListener("change", this.#handleMotionChange);
+    window.addEventListener("resize", this.#handleResize, { passive: true });
     this.#installDebugApi();
   }
 
   start(): void {
     this.#root.replaceChildren(this.#canvas);
     this.#ui.mount(this.#root);
+    this.#resizeCanvas();
     this.#render();
     this.#loop.start();
   }
@@ -192,6 +230,10 @@ export class GameApplication {
     this.#loop.stop();
     this.#pointer.destroy();
     this.#keyboard.destroy();
+    window.removeEventListener("resize", this.#handleResize);
+    this.#motionQuery?.removeEventListener("change", this.#handleMotionChange);
+    this.#unsubscribePresentation();
+    this.#audio.destroy();
     if (import.meta.env.DEV) delete window.__GAME_DEBUG__;
     this.#ui.unmount();
   }
@@ -234,6 +276,9 @@ export class GameApplication {
           break;
         case "set-speed":
           this.#session.setSpeed(command.speed);
+          break;
+        case "set-audio":
+          this.#session.setAudioSettings(command);
           break;
         case "restart-game":
           this.#session.restart();
@@ -283,11 +328,14 @@ export class GameApplication {
   }
 
   #run(action: () => void): void {
+    void this.#audio.unlock();
     try {
       action();
     } catch (error) {
       this.#session.reportError(error);
     }
+    this.#audio.applySettings(this.#session.audioSettings);
+    void this.#audio.unlock();
     this.#render();
   }
 
@@ -299,12 +347,50 @@ export class GameApplication {
     this.#renderState.effects = state.effects;
     this.#renderState.placementPreview = state.placementPreview;
     this.#renderState.selectedTowerRange = this.#session.selectedTowerRange;
+    const visualTime = state.reducedMotion
+      ? 0
+      : (performance.now() - this.#visualStartedAt) / 1000;
+    this.#renderState.visualTime = visualTime;
+    this.#renderState.reducedMotion = state.reducedMotion;
+    const shake = state.reducedMotion ? 0 : state.screenShake;
+    this.#renderState.shakeOffset.x = shake === 0 ? 0 : Math.sin(visualTime * 47) * shake;
+    this.#renderState.shakeOffset.y = shake === 0 ? 0 : Math.cos(visualTime * 39) * shake * 0.72;
     this.#renderer.render(this.#renderState);
+    this.#audio.update();
+  }
+
+  #resizeCanvas(): void {
+    const availableWidth = Math.max(1, window.innerWidth - 24);
+    const availableHeight = Math.max(1, window.innerHeight - 24);
+    const cssScale = Math.min(
+      1,
+      availableWidth / this.#worldWidth,
+      availableHeight / this.#worldHeight,
+    );
+    const cssWidth = Math.max(1, Math.round(this.#worldWidth * cssScale));
+    const cssHeight = Math.max(1, Math.round(this.#worldHeight * cssScale));
+    const pixelRatio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    const backingWidth = Math.max(1, Math.round(cssWidth * pixelRatio));
+    const backingHeight = Math.max(1, Math.round(cssHeight * pixelRatio));
+
+    this.#canvas.style.width = `${cssWidth}px`;
+    this.#canvas.style.height = `${cssHeight}px`;
+    if (this.#canvas.width !== backingWidth) this.#canvas.width = backingWidth;
+    if (this.#canvas.height !== backingHeight) this.#canvas.height = backingHeight;
+    this.#camera.viewportWidth = backingWidth;
+    this.#camera.viewportHeight = backingHeight;
+    this.#camera.zoom = Math.min(
+      backingWidth / this.#worldWidth,
+      backingHeight / this.#worldHeight,
+    );
   }
 
   #installDebugApi(): void {
     if (!import.meta.env.DEV) return;
     const session = this.#session;
+    const canvas = this.#canvas;
+    const worldWidth = this.#worldWidth;
+    const worldHeight = this.#worldHeight;
     window.__GAME_DEBUG__ = {
       get towers() { return session.getState().runtimeTowers; },
       get enemies() { return session.getState().enemies; },
@@ -315,6 +401,12 @@ export class GameApplication {
       get currentWave() { return session.currentWaveNumber; },
       get phase() { return session.phase; },
       get speed() { return session.speed; },
+      get worldWidth() { return worldWidth; },
+      get worldHeight() { return worldHeight; },
+      get canvasWidth() { return canvas.width; },
+      get canvasHeight() { return canvas.height; },
+      get reducedMotion() { return session.getState().reducedMotion; },
+      get activeEffects() { return session.getState().effects.length; },
     };
   }
 }
