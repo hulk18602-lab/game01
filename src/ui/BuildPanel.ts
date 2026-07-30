@@ -8,6 +8,7 @@ export class BuildPanel {
   readonly #dispatch: CommandDispatcher;
   readonly #controls = new Map<string, HTMLButtonElement>();
   #selectedType: string | null = null;
+  #signature = "";
 
   constructor(dispatch: CommandDispatcher) {
     this.#dispatch = dispatch;
@@ -21,6 +22,12 @@ export class BuildPanel {
     selectedType: string | null,
     visible = true,
   ): void {
+    let signature = `${visible}|${selectedType ?? ""}`;
+    for (const option of options) {
+      signature += `|${option.type}:${option.available}:${option.cost}:${option.damage}:${option.range}:${option.fireRate}`;
+    }
+    if (signature === this.#signature) return;
+    this.#signature = signature;
     this.element.hidden = !visible;
     this.#selectedType = selectedType;
     for (const option of options) {

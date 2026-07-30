@@ -45,6 +45,7 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
         paused: session.phase === "paused",
       };
     },
+    audio: () => session.audioSettings,
     buildOptions: (state) => session.towerOptions.map((tower) => {
       const level = tower.levels[0]!;
       return {

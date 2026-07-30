@@ -8,6 +8,7 @@ export class EnemyTooltip {
   readonly #health = element("p");
   readonly #traits = element("p");
   readonly #effects = element("p");
+  #signature = "";
 
   constructor() {
     this.element.setAttribute("aria-label", "Enemy details");
@@ -15,6 +16,11 @@ export class EnemyTooltip {
   }
 
   render(view: EnemyTooltipView | null): void {
+    const signature = view
+      ? `${view.name}|${view.type}|${Math.ceil(view.health)}|${view.maxHealth}|${view.reward}|${view.baseDamage}|${view.armorPercent}|${view.effects}`
+      : "none";
+    if (signature === this.#signature) return;
+    this.#signature = signature;
     this.element.hidden = view === null;
     if (!view) return;
     this.#title.textContent = view.name;

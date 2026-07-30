@@ -17,6 +17,9 @@ export interface GameSettings {
   readonly difficulty: DifficultyId;
   readonly speed: GameSpeed;
   readonly bestScore: number;
+  readonly soundEnabled: boolean;
+  readonly musicVolume: number;
+  readonly sfxVolume: number;
 }
 
 export interface SavedTower {
@@ -65,10 +68,15 @@ const defaultSettings = (): GameSettings => ({
   difficulty: "normal",
   speed: 1,
   bestScore: 0,
+  soundEnabled: true,
+  musicVolume: 0.34,
+  sfxVolume: 0.62,
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
+const volume = (value: unknown, fallback: number): number =>
+  Number.isFinite(value) ? Math.max(0, Math.min(1, Number(value))) : fallback;
 
 /** Defensive versioned localStorage boundary. Invalid data is ignored and removed. */
 export class GameStorage {
@@ -87,6 +95,9 @@ export class GameStorage {
       bestScore: Number.isFinite(parsed.bestScore) && Number(parsed.bestScore) >= 0
         ? Math.floor(Number(parsed.bestScore))
         : 0,
+      soundEnabled: parsed.soundEnabled !== false,
+      musicVolume: volume(parsed.musicVolume, 0.34),
+      sfxVolume: volume(parsed.sfxVolume, 0.62),
     };
   }
 

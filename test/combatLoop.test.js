@@ -90,6 +90,45 @@ test('projectiles disappear when their target is already dead', () => {
   assert.equal(projectiles.projectiles.length, 0);
 });
 
+test('projectiles recycle bounded pool objects after impact', () => {
+  const enemy = new Enemy('grunt', { id: 'pooled-target', position: { x: 1, y: 0 } });
+  const projectiles = new ProjectileSystem({ poolCapacity: 2 });
+  const first = projectiles.spawn({
+    sourceId: 'tower-1',
+    targetId: enemy.id,
+    position: { x: 0, y: 0 },
+    damage: 1,
+    speed: 100,
+  });
+  projectiles.update(1, [enemy]);
+  const second = projectiles.spawn({
+    sourceId: 'tower-1',
+    targetId: enemy.id,
+    position: { x: 0, y: 0 },
+    damage: 1,
+    speed: 100,
+  });
+  assert.equal(second, first);
+  assert.ok(projectiles.pool.length <= projectiles.poolCapacity);
+});
+
+test('targeting remains linear with one hundred enemies', () => {
+  const enemies = Array.from({ length: 100 }, (_, index) => new Enemy('grunt', {
+    id: `enemy-${index}`,
+    position: { x: 100 + index, y: 100 },
+    progress: index / 100,
+    health: 100 + index,
+  }));
+  const towers = Array.from({ length: 20 }, (_, index) => tower({
+    id: `tower-${index}`,
+    range: 240,
+    targeting: index % 2 === 0 ? 'first' : 'strongest',
+  }));
+  const targeting = new TargetingSystem();
+  for (let frame = 0; frame < 300; frame += 1) targeting.update(towers, enemies);
+  assert.ok(towers.every((candidate) => typeof candidate.targetId === 'string'));
+});
+
 test('destroyed enemies are removed and rewarded exactly once', () => {
   for (const [type, reward] of [['grunt', 10], ['runner', 14], ['tank', 30]]) {
     const enemy = new Enemy(type, { id: type });

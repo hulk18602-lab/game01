@@ -55,11 +55,11 @@ export class GameUi<State> {
 
   render(): void {
     const view = selectUiView(this.#reader.getState(), this.#selectors);
-    this.#hud.render(view.hud);
+    this.#hud.render(view.hud, view.audio);
     this.#buildPanel.render(view.buildOptions, view.selectedBuildType, view.hud.visible);
     this.#towerPanel.render(view.selectedTower);
     this.#enemyTooltip.render(view.enemyTooltip);
     this.#message.render(view.message);
-    this.#overlays.render(view.overlay);
+    this.#overlays.render(view.overlay, view.audio);
   }
 }

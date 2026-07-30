@@ -1,10 +1,16 @@
 import { distanceSquared, isAlive } from './systemUtils.js';
 
-/** Selects targets, but deliberately performs no attacks or damage. */
+/** Selects targets in one pass per tower without allocating candidate arrays. */
 export class TargetingSystem {
   update(towers, enemies) {
     for (const tower of towers) {
-      const current = enemies.find((enemy) => enemy.id === tower.targetId);
+      let current = null;
+      for (const enemy of enemies) {
+        if (enemy.id === tower.targetId) {
+          current = enemy;
+          break;
+        }
+      }
       tower.targetId = this.isValidTarget(tower, current)
         ? current.id
         : (this.selectTarget(tower, enemies)?.id ?? null);
@@ -16,18 +22,31 @@ export class TargetingSystem {
   }
 
   selectTarget(tower, enemies) {
-    const candidates = enemies.filter((enemy) => this.isValidTarget(tower, enemy));
     const priority = tower.targeting ?? 'first';
-
-    if (priority === 'nearest') {
-      candidates.sort((a, b) => distanceSquared(tower, a) - distanceSquared(tower, b));
-    } else if (priority === 'strongest') {
-      candidates.sort((a, b) => b.health - a.health);
-    } else {
-      // Path progress is optional so simple enemies remain valid inputs.
-      candidates.sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
+    let selected = null;
+    let selectedMetric = priority === 'strongest' ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+    for (const enemy of enemies) {
+      if (!this.isValidTarget(tower, enemy)) continue;
+      if (priority === 'nearest') {
+        const metric = distanceSquared(tower, enemy);
+        if (metric < selectedMetric) {
+          selected = enemy;
+          selectedMetric = metric;
+        }
+      } else if (priority === 'strongest') {
+        if (enemy.health > selectedMetric) {
+          selected = enemy;
+          selectedMetric = enemy.health;
+        }
+      } else {
+        const metric = -(enemy.progress ?? 0);
+        if (metric < selectedMetric) {
+          selected = enemy;
+          selectedMetric = metric;
+        }
+      }
     }
-    return candidates[0] ?? null;
+    return selected;
   }
 }
 

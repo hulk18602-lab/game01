@@ -10,6 +10,11 @@ import towerTypes from "../content/towers/towerTypes.js";
 import waveDefinitions from "../content/waves/waveDefinitions.js";
 import Enemy from "../entities/Enemy.js";
 import Path from "../path/Path.js";
+import {
+  CombatEffectPool,
+  type CombatEffectEvent,
+  type VisualEffect,
+} from "../rendering/CombatEffectPool.js";
 import WaveSystem from "../systems/WaveSystem.js";
 import { Grid, CoordinateConverter } from "./map/index.js";
 import {
@@ -153,25 +158,14 @@ export interface ProjectileEntity {
   readonly sourceId: string;
   readonly targetId: string;
   readonly damage: number;
+  readonly damageType?: string;
+  readonly areaRadius?: number;
+  readonly radius?: number;
   readonly color?: string;
   position: { x: number; y: number };
 }
 
-export interface VisualEffect {
-  readonly type: string;
-  position: { x: number; y: number };
-  radius?: number;
-  readonly color: string;
-  readonly fill?: boolean;
-  readonly lineWidth?: number;
-  readonly text?: string;
-  readonly font?: string;
-  readonly duration: number;
-  remaining: number;
-  readonly growth?: number;
-  readonly rise?: number;
-  opacity: number;
-}
+export type { VisualEffect } from "../rendering/CombatEffectPool.js";
 
 export interface PlacementPreview {
   readonly position: Position;
@@ -187,6 +181,12 @@ export interface UiMessage {
   readonly text: string;
 }
 
+export interface AudioSettings {
+  readonly enabled: boolean;
+  readonly musicVolume: number;
+  readonly sfxVolume: number;
+}
+
 export interface CampaignRuntime extends GameState {
   lives: number;
   score: number;
@@ -199,6 +199,8 @@ export interface CampaignRuntime extends GameState {
   enemies: EnemyEntity[];
   runtimeTowers: RuntimeTower[];
   effects: VisualEffect[];
+  screenShake: number;
+  reducedMotion: boolean;
 }
 
 interface WaveSnapshot {
@@ -219,12 +221,23 @@ interface WaveSystemPort {
   restore(snapshot: WaveSnapshot): void;
 }
 
-interface BattleEvent {
-  readonly type: "shot" | "hit" | "enemy-death" | "boss-phase";
-  readonly position: Position;
+type BattleEvent = CombatEffectEvent;
+
+export interface PresentationCue {
+  readonly type:
+    | "shot"
+    | "hit"
+    | "enemy-death"
+    | "boss-phase"
+    | "build"
+    | "upgrade"
+    | "sell"
+    | "wave"
+    | "victory"
+    | "defeat";
   readonly damage?: number;
+  readonly damageType?: string;
   readonly areaRadius?: number;
-  readonly phase?: number;
 }
 
 interface BattleResult {
@@ -277,7 +290,9 @@ export class CampaignSession {
 
   readonly #storage: GameStorage;
   readonly #placement = new PlacementSystem();
+  readonly #effectPool = new CombatEffectPool();
   readonly #listeners = new Set<() => void>();
+  readonly #presentationListeners = new Set<(cue: PresentationCue) => void>();
   #settings: GameSettings;
   #state: CampaignRuntime;
   #waveSystem!: WaveSystemPort;
@@ -286,6 +301,7 @@ export class CampaignSession {
   #waveLivesAtStart = 0;
   #autosaveElapsed = 0;
   #savedGameAvailable = false;
+  #reducedMotion = false;
 
   constructor(options: CampaignSessionOptions = {}) {
     this.map = options.map ?? (map01 as unknown as MapDefinition);
@@ -315,6 +331,11 @@ export class CampaignSession {
   subscribe(listener: () => void): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
+  }
+
+  subscribePresentation(listener: (cue: PresentationCue) => void): () => void {
+    this.#presentationListeners.add(listener);
+    return () => this.#presentationListeners.delete(listener);
   }
 
   get phase(): GamePhase {
@@ -365,6 +386,14 @@ export class CampaignSession {
 
   get bestScore(): number {
     return this.#settings.bestScore;
+  }
+
+  get audioSettings(): AudioSettings {
+    return {
+      enabled: this.#settings.soundEnabled,
+      musicVolume: this.#settings.musicVolume,
+      sfxVolume: this.#settings.sfxVolume,
+    };
   }
 
   get nextWaveTitle(): string {
@@ -495,6 +524,7 @@ export class CampaignSession {
       bonus > 0 ? `Wave launched early: +${bonus} Gold.` : "Wave started.",
       bonus > 0 ? "success" : "info",
     );
+    this.#publish({ type: "wave" });
     this.#saveGame();
     this.#emit();
     return bonus;
@@ -520,6 +550,30 @@ export class CampaignSession {
     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
     this.#showMessage(message, "error");
     if (!(error instanceof CommandValidationError)) console.error(error);
+    this.#emit();
+  }
+
+  setReducedMotion(reduced: boolean): void {
+    this.#reducedMotion = reduced;
+    this.#state.reducedMotion = reduced;
+    this.#effectPool.setReducedMotion(reduced);
+    if (reduced) this.#state.screenShake = 0;
+  }
+
+  setAudioSettings(settings: Partial<AudioSettings>): void {
+    const clamp = (value: number, fallback: number): number =>
+      Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback;
+    this.#settings = {
+      ...this.#settings,
+      soundEnabled: settings.enabled ?? this.#settings.soundEnabled,
+      musicVolume: settings.musicVolume === undefined
+        ? this.#settings.musicVolume
+        : clamp(settings.musicVolume, this.#settings.musicVolume),
+      sfxVolume: settings.sfxVolume === undefined
+        ? this.#settings.sfxVolume
+        : clamp(settings.sfxVolume, this.#settings.sfxVolume),
+    };
+    this.#saveSettings();
     this.#emit();
   }
 
@@ -586,6 +640,7 @@ export class CampaignSession {
     this.#nextTower += 1;
     this.#state.selectedTowerId = null;
     this.#showMessage(`${this.#tower(type).name} built.`, "success");
+    this.#publish({ type: "build" });
     this.#refreshPlacementPreview(point);
     this.#saveGame();
     this.#emit();
@@ -612,6 +667,7 @@ export class CampaignSession {
     const tower = new UpgradeTowerCommand(PLAYER_ID, id).execute(this.#state);
     this.#replaceRuntimeTower(tower);
     this.#showMessage(`${this.#tower(tower.type).name} upgraded to level ${tower.level + 1}.`, "success");
+    this.#publish({ type: "upgrade" });
     this.#saveGame();
     this.#emit();
     return tower;
@@ -622,6 +678,7 @@ export class CampaignSession {
     this.#state.runtimeTowers = this.#state.runtimeTowers.filter((tower) => tower.id !== id);
     this.#state.selectedTowerId = null;
     this.#showMessage(`Tower sold for ${refund} Gold.`, "success");
+    this.#publish({ type: "sell" });
     this.#saveGame();
     this.#emit();
     return refund;
@@ -653,7 +710,8 @@ export class CampaignSession {
     if (this.flow.phase !== "preparing" && this.flow.phase !== "wave") return;
     const scaledDelta = deltaSeconds * this.flow.speed;
     this.#state.elapsedSeconds += scaledDelta;
-    this.#updateVisualEffects(scaledDelta);
+    this.#effectPool.update(scaledDelta);
+    this.#state.screenShake = this.#effectPool.shakeIntensity;
 
     if (this.flow.phase === "preparing") {
       if (this.flow.update(scaledDelta)) this.startWave(false);
@@ -737,6 +795,8 @@ export class CampaignSession {
       enemies: [],
       runtimeTowers: [],
       effects: [],
+      screenShake: 0,
+      reducedMotion: this.#reducedMotion,
     };
   }
 
@@ -758,6 +818,11 @@ export class CampaignSession {
       createEnemy: (type: string) => this.#createEnemy(type, difficulty),
     }) as unknown as WaveSystemPort;
     this.#battle = new BattleSimulation(this.path) as unknown as BattleSimulationPort;
+    const reducedMotion = this.#state.reducedMotion;
+    this.#effectPool.clear();
+    this.#effectPool.setReducedMotion(reducedMotion);
+    this.#state.effects = this.#effectPool.effects;
+    this.#state.screenShake = 0;
   }
 
   #createEnemy(
@@ -871,79 +936,23 @@ export class CampaignSession {
     this.#saveSettings();
     this.#storage.clearGame();
     this.#savedGameAvailable = false;
+    this.#publish({ type: outcome });
   }
 
   #recordBattleEvents(events: readonly BattleEvent[]): void {
     for (const event of events) {
-      if (event.type === "shot") {
-        this.#state.effects.push({
-          type: "shot",
-          position: { ...event.position },
-          radius: 8,
-          color: "#fef08a",
-          fill: true,
-          duration: 0.12,
-          remaining: 0.12,
-          opacity: 1,
-        });
-      } else if (event.type === "hit") {
-        const explosive = (event.areaRadius ?? 0) > 0;
-        this.#state.effects.push({
-          type: explosive ? "explosion" : "hit",
-          position: { ...event.position },
-          radius: explosive ? Math.max(12, (event.areaRadius ?? 0) * 0.35) : 9,
-          growth: explosive ? 65 : undefined,
-          color: explosive ? "#fb923c" : "#f8fafc",
-          duration: explosive ? 0.28 : 0.18,
-          remaining: explosive ? 0.28 : 0.18,
-          opacity: 1,
-        });
-        this.#state.effects.push({
-          type: "damage",
-          position: { x: event.position.x, y: event.position.y - 18 },
-          text: `-${Math.round(event.damage ?? 0)}`,
-          color: "#fef2f2",
-          duration: 0.55,
-          remaining: 0.55,
-          rise: 22,
-          opacity: 1,
-        });
-      } else if (event.type === "enemy-death") {
-        this.#state.effects.push({
-          type: "enemy-death",
-          position: { ...event.position },
-          radius: 14,
-          growth: 45,
-          color: "#fb7185",
-          duration: 0.45,
-          remaining: 0.45,
-          opacity: 1,
-        });
-      } else if (event.type === "boss-phase") {
-        this.#state.effects.push({
-          type: "boss-phase",
-          position: { ...event.position },
-          radius: 24,
-          growth: 80,
-          color: "#c084fc",
-          duration: 0.7,
-          remaining: 0.7,
-          opacity: 1,
-        });
+      this.#effectPool.emit(event);
+      this.#publish({
+        type: event.type,
+        damage: event.damage,
+        damageType: event.damageType,
+        areaRadius: event.areaRadius,
+      });
+      if (event.type === "boss-phase") {
         this.#showMessage(`Boss entered phase ${event.phase ?? 2}.`, "info");
       }
     }
-  }
-
-  #updateVisualEffects(deltaSeconds: number): void {
-    for (let index = this.#state.effects.length - 1; index >= 0; index -= 1) {
-      const effect = this.#state.effects[index]!;
-      effect.remaining -= deltaSeconds;
-      effect.opacity = Math.max(0, effect.remaining / effect.duration);
-      if (effect.growth) effect.radius = (effect.radius ?? 0) + effect.growth * deltaSeconds;
-      if (effect.rise) effect.position.y -= effect.rise * deltaSeconds;
-      if (effect.remaining <= 0) this.#state.effects.splice(index, 1);
-    }
+    this.#state.screenShake = this.#effectPool.shakeIntensity;
   }
 
   #scoreValue(value: number): number {
@@ -1077,6 +1086,9 @@ export class CampaignSession {
       difficulty: this.#settings.difficulty,
       speed: this.#settings.speed,
       bestScore: this.#settings.bestScore,
+      soundEnabled: this.#settings.soundEnabled,
+      musicVolume: this.#settings.musicVolume,
+      sfxVolume: this.#settings.sfxVolume,
     });
   }
 
@@ -1101,6 +1113,10 @@ export class CampaignSession {
 
   #emit(): void {
     for (const listener of this.#listeners) listener();
+  }
+
+  #publish(cue: PresentationCue): void {
+    for (const listener of this.#presentationListeners) listener(cue);
   }
 }
 

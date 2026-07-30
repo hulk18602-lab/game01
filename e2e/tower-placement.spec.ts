@@ -6,6 +6,7 @@ type DebugEntity = {
   readonly id: string;
   readonly health?: number;
   readonly targetId?: string | null;
+  readonly position?: { readonly x: number; readonly y: number };
 };
 
 declare global {
@@ -20,6 +21,12 @@ declare global {
       readonly currentWave: number;
       readonly phase: string;
       readonly speed: number;
+      readonly worldWidth: number;
+      readonly worldHeight: number;
+      readonly canvasWidth: number;
+      readonly canvasHeight: number;
+      readonly reducedMotion: boolean;
+      readonly activeEffects: number;
     };
   }
 }
@@ -49,13 +56,13 @@ async function startNormalGame(page: Page, path = "/"): Promise<void> {
 async function cellPoint(canvas: Locator, x: number, y: number): Promise<{ x: number; y: number }> {
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error("Canvas has no browser layout box");
-  const size = await canvas.evaluate((node: HTMLCanvasElement) => ({
-    width: node.width,
-    height: node.height,
+  const world = await canvas.evaluate((node: HTMLCanvasElement) => ({
+    width: window.__GAME_DEBUG__?.worldWidth ?? node.width,
+    height: window.__GAME_DEBUG__?.worldHeight ?? node.height,
   }));
   return {
-    x: bounds.x + (((x + 0.5) * TILE_SIZE) / size.width) * bounds.width,
-    y: bounds.y + (((y + 0.5) * TILE_SIZE) / size.height) * bounds.height,
+    x: bounds.x + (((x + 0.5) * TILE_SIZE) / world.width) * bounds.width,
+    y: bounds.y + (((y + 0.5) * TILE_SIZE) / world.height) * bounds.height,
   };
 }
 
@@ -73,9 +80,13 @@ async function cellPixel(canvas: Locator, x: number, y: number): Promise<number[
   return canvas.evaluate((node: HTMLCanvasElement, point) => {
     const context = node.getContext("2d");
     if (!context) throw new Error("Canvas 2D context is unavailable");
+    const worldWidth = window.__GAME_DEBUG__?.worldWidth ?? node.width;
+    const worldHeight = window.__GAME_DEBUG__?.worldHeight ?? node.height;
+    const pixelX = Math.floor(((point.x + 0.5) * point.tileSize / worldWidth) * node.width);
+    const pixelY = Math.floor(((point.y + 0.5) * point.tileSize / worldHeight) * node.height);
     return [...context.getImageData(
-      (point.x + 0.5) * point.tileSize,
-      (point.y + 0.5) * point.tileSize,
+      pixelX,
+      pixelY,
       1,
       1,
     ).data];
