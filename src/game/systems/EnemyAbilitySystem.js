@@ -2,8 +2,35 @@ import { isAlive } from "./systemUtils.js";
 
 /** Applies innate enemy traits such as regeneration and boss phase transitions. */
 export class EnemyAbilitySystem {
-  constructor() {
+  constructor({ createEnemy } = {}) {
     this.events = [];
+    this.createEnemy = createEnemy ?? null;
+  }
+
+  spawnOnDeath(enemies) {
+    if (!this.createEnemy) return [];
+    const spawned = [];
+    for (const enemy of enemies) {
+      const destroyed = enemy.health <= 0 || enemy.removalReason === "destroyed";
+      if (!destroyed
+        || enemy.splitProcessed
+        || !enemy.splitInto
+        || enemy.splitCount <= 0
+        || enemy.splitGeneration > 0) continue;
+      enemy.splitProcessed = true;
+      for (let index = 0; index < enemy.splitCount; index += 1) {
+        const angle = index * Math.PI * 2 / enemy.splitCount;
+        spawned.push(this.createEnemy(enemy.splitInto, {
+          progress: enemy.progress,
+          position: {
+            x: enemy.position.x + Math.cos(angle) * 6,
+            y: enemy.position.y + Math.sin(angle) * 6,
+          },
+          splitGeneration: enemy.splitGeneration + 1,
+        }));
+      }
+    }
+    return spawned;
   }
 
   update(deltaSeconds, enemies) {

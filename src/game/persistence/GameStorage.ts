@@ -1,7 +1,8 @@
+import { isLevelId, type LevelId } from "../../content/levels/levelDefinitions.js";
 import type { DifficultyId, FlowSnapshot, GameSpeed } from "../GameFlow.js";
 import type { Position } from "../types.js";
 
-export const SAVE_SCHEMA_VERSION = 1;
+export const SAVE_SCHEMA_VERSION = 2;
 const SETTINGS_KEY = "river-outpost.settings";
 const ACTIVE_GAME_KEY = "river-outpost.active-game";
 
@@ -16,10 +17,14 @@ export interface GameSettings {
   readonly tutorialSeen: boolean;
   readonly difficulty: DifficultyId;
   readonly speed: GameSpeed;
-  readonly bestScore: number;
   readonly soundEnabled: boolean;
   readonly musicVolume: number;
   readonly sfxVolume: number;
+  readonly selectedLevelId: LevelId;
+  readonly unlockedLevelIds: readonly LevelId[];
+  readonly completedLevelIds: readonly LevelId[];
+  readonly bestScoreByLevel: Readonly<Partial<Record<LevelId, number>>>;
+  readonly bestDifficultyByLevel: Readonly<Partial<Record<LevelId, DifficultyId>>>;
 }
 
 export interface SavedTower {
@@ -34,6 +39,8 @@ export interface SavedEnemy {
   readonly id: string;
   readonly type: string;
   readonly health: number;
+  readonly shield?: number;
+  readonly splitGeneration?: number;
   readonly progress: number;
   readonly position: Position;
   readonly statusEffects: readonly Record<string, unknown>[];
@@ -50,6 +57,9 @@ export interface SavedWave {
 export interface ActiveGameSave {
   readonly version: typeof SAVE_SCHEMA_VERSION;
   readonly savedAt: number;
+  readonly levelId: LevelId;
+  readonly mapId: string;
+  readonly contentVersion: number;
   readonly flow: FlowSnapshot;
   readonly lives: number;
   readonly gold: number;
@@ -67,37 +77,85 @@ const defaultSettings = (): GameSettings => ({
   tutorialSeen: false,
   difficulty: "normal",
   speed: 1,
-  bestScore: 0,
   soundEnabled: true,
   musicVolume: 0.34,
   sfxVolume: 0.62,
+  selectedLevelId: "level-1",
+  unlockedLevelIds: ["level-1"],
+  completedLevelIds: [],
+  bestScoreByLevel: {},
+  bestDifficultyByLevel: {},
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 const volume = (value: unknown, fallback: number): number =>
   Number.isFinite(value) ? Math.max(0, Math.min(1, Number(value))) : fallback;
+const difficulty = (value: unknown): DifficultyId =>
+  value === "easy" || value === "hard" ? value : "normal";
+const speed = (value: unknown): GameSpeed => value === 2 || value === 3 ? value : 1;
 
-/** Defensive versioned localStorage boundary. Invalid data is ignored and removed. */
+const levelIds = (value: unknown, fallback: readonly LevelId[]): LevelId[] => {
+  if (!Array.isArray(value)) return [...fallback];
+  const result: LevelId[] = [];
+  for (const candidate of value) {
+    if (isLevelId(candidate) && !result.includes(candidate)) result.push(candidate);
+  }
+  return result.length > 0 ? result : [...fallback];
+};
+
+const scoreRecord = (value: unknown): Partial<Record<LevelId, number>> => {
+  if (!isRecord(value)) return {};
+  const result: Partial<Record<LevelId, number>> = {};
+  for (const [key, candidate] of Object.entries(value)) {
+    if (isLevelId(key) && Number.isFinite(candidate) && Number(candidate) >= 0) {
+      result[key] = Math.floor(Number(candidate));
+    }
+  }
+  return result;
+};
+
+const difficultyRecord = (value: unknown): Partial<Record<LevelId, DifficultyId>> => {
+  if (!isRecord(value)) return {};
+  const result: Partial<Record<LevelId, DifficultyId>> = {};
+  for (const [key, candidate] of Object.entries(value)) {
+    if (isLevelId(key)
+      && (candidate === "easy" || candidate === "normal" || candidate === "hard")) {
+      result[key] = candidate;
+    }
+  }
+  return result;
+};
+
+/** Defensive schema-v2 localStorage boundary with settings-only migration from v1. */
 export class GameStorage {
   constructor(private readonly storage: StorageLike | null) {}
 
   loadSettings(): GameSettings {
     const parsed = this.read(SETTINGS_KEY);
-    if (!isRecord(parsed) || parsed.version !== SAVE_SCHEMA_VERSION) return defaultSettings();
-    const difficulty = parsed.difficulty;
-    const speed = parsed.speed;
+    if (!isRecord(parsed)) return defaultSettings();
+    if (parsed.version === 1) return this.migrateV1Settings(parsed);
+    if (parsed.version !== SAVE_SCHEMA_VERSION) return defaultSettings();
+
+    const unlocked = levelIds(parsed.unlockedLevelIds, ["level-1"]);
+    if (!unlocked.includes("level-1")) unlocked.unshift("level-1");
+    const completed = levelIds(parsed.completedLevelIds, []);
+    const selected = isLevelId(parsed.selectedLevelId) && unlocked.includes(parsed.selectedLevelId)
+      ? parsed.selectedLevelId
+      : "level-1";
     return {
       version: SAVE_SCHEMA_VERSION,
       tutorialSeen: parsed.tutorialSeen === true,
-      difficulty: difficulty === "easy" || difficulty === "hard" ? difficulty : "normal",
-      speed: speed === 2 || speed === 3 ? speed : 1,
-      bestScore: Number.isFinite(parsed.bestScore) && Number(parsed.bestScore) >= 0
-        ? Math.floor(Number(parsed.bestScore))
-        : 0,
+      difficulty: difficulty(parsed.difficulty),
+      speed: speed(parsed.speed),
       soundEnabled: parsed.soundEnabled !== false,
       musicVolume: volume(parsed.musicVolume, 0.34),
       sfxVolume: volume(parsed.sfxVolume, 0.62),
+      selectedLevelId: selected,
+      unlockedLevelIds: unlocked,
+      completedLevelIds: completed,
+      bestScoreByLevel: scoreRecord(parsed.bestScoreByLevel),
+      bestDifficultyByLevel: difficultyRecord(parsed.bestDifficultyByLevel),
     };
   }
 
@@ -107,6 +165,10 @@ export class GameStorage {
 
   loadGame(): ActiveGameSave | null {
     const parsed = this.read(ACTIVE_GAME_KEY);
+    if (isRecord(parsed) && parsed.version === 1) {
+      this.remove(ACTIVE_GAME_KEY);
+      return null;
+    }
     if (!this.isActiveGame(parsed)) {
       if (parsed !== null) this.remove(ACTIVE_GAME_KEY);
       return null;
@@ -126,8 +188,35 @@ export class GameStorage {
     this.remove(ACTIVE_GAME_KEY);
   }
 
+  private migrateV1Settings(parsed: Record<string, unknown>): GameSettings {
+    const legacyScore = Number.isFinite(parsed.bestScore) && Number(parsed.bestScore) >= 0
+      ? Math.floor(Number(parsed.bestScore))
+      : 0;
+    const migrated: GameSettings = {
+      version: SAVE_SCHEMA_VERSION,
+      tutorialSeen: parsed.tutorialSeen === true,
+      difficulty: difficulty(parsed.difficulty),
+      speed: speed(parsed.speed),
+      soundEnabled: parsed.soundEnabled !== false,
+      musicVolume: volume(parsed.musicVolume, 0.34),
+      sfxVolume: volume(parsed.sfxVolume, 0.62),
+      selectedLevelId: "level-1",
+      unlockedLevelIds: ["level-1"],
+      completedLevelIds: [],
+      bestScoreByLevel: legacyScore > 0 ? { "level-1": legacyScore } : {},
+      bestDifficultyByLevel: {},
+    };
+    this.saveSettings(migrated);
+    return migrated;
+  }
+
   private isActiveGame(value: unknown): value is ActiveGameSave {
     if (!isRecord(value) || value.version !== SAVE_SCHEMA_VERSION) return false;
+    if (!isLevelId(value.levelId)
+      || typeof value.mapId !== "string"
+      || value.mapId.length === 0
+      || !Number.isInteger(value.contentVersion)
+      || Number(value.contentVersion) < 1) return false;
     if (!isRecord(value.flow) || !isRecord(value.wave)) return false;
     return Number.isFinite(value.lives)
       && Number.isFinite(value.gold)

@@ -5,6 +5,11 @@ import {
   waveCompletionReward,
 } from "../content/balance/rewards.js";
 import enemyTypes from "../content/enemies/enemyTypes.js";
+import levelDefinitions, {
+  getLevelDefinition,
+  type LevelDefinition,
+  type LevelId,
+} from "../content/levels/levelDefinitions.js";
 import map01 from "../content/maps/map01.js";
 import towerTypes from "../content/towers/towerTypes.js";
 import waveDefinitions from "../content/waves/waveDefinitions.js";
@@ -85,6 +90,9 @@ interface TowerLevelContent {
   readonly fireRate: number;
   readonly projectileSpeed: number;
   readonly areaRadius?: number;
+  readonly chainCount?: number;
+  readonly chainFalloff?: number;
+  readonly chainRange?: number;
   readonly statusEffect?: StatusEffect;
 }
 
@@ -108,6 +116,9 @@ export interface EnemyContent {
   readonly baseDamage: number;
   readonly armor: number;
   readonly regeneration?: number;
+  readonly shield?: number;
+  readonly splitInto?: string;
+  readonly splitCount?: number;
   readonly boss?: boolean;
   readonly color: string;
   readonly radius: number;
@@ -131,6 +142,12 @@ export interface EnemyEntity {
   readonly radius: number;
   readonly maxHealth: number;
   health: number;
+  readonly maxShield: number;
+  shield: number;
+  readonly splitInto: string | null;
+  readonly splitCount: number;
+  splitGeneration: number;
+  splitProcessed: boolean;
   readonly speed: number;
   readonly reward: number;
   readonly baseDamage: number;
@@ -266,9 +283,25 @@ interface DifficultyContent {
 }
 
 export interface CampaignSessionOptions {
+  readonly levelId?: LevelId;
   readonly map?: MapDefinition;
   readonly waves?: readonly WaveDefinition[];
+  readonly availableTowerTypes?: readonly string[];
+  readonly availableEnemyTypes?: readonly string[];
+  readonly contentVersion?: number;
+  readonly levels?: readonly LevelDefinition[];
   readonly storage?: GameStorage;
+}
+
+export interface LevelOption {
+  readonly id: LevelId;
+  readonly number: number;
+  readonly name: string;
+  readonly description: string;
+  readonly unlocked: boolean;
+  readonly completed: boolean;
+  readonly bestScore: number;
+  readonly bestDifficulty: DifficultyId | null;
 }
 
 const towerCatalog = towerTypes as unknown as Readonly<Record<string, TowerContent>>;
@@ -281,14 +314,21 @@ const isFinitePosition = (position: Position): boolean =>
 
 /** Owns one campaign and coordinates existing commands/systems without browser or DOM concerns. */
 export class CampaignSession {
+  readonly levelId: LevelId;
+  readonly levelName: string;
+  readonly contentVersion: number;
   readonly map: MapDefinition;
   readonly grid: InstanceType<typeof Grid>;
   readonly converter: InstanceType<typeof CoordinateConverter>;
   readonly path: InstanceType<typeof Path>;
   readonly flow = new GameFlow();
   readonly waves: readonly WaveDefinition[];
+  readonly levels: readonly LevelDefinition[];
 
   readonly #storage: GameStorage;
+  readonly #level: LevelDefinition;
+  readonly #availableTowerTypes: ReadonlySet<string>;
+  readonly #availableEnemyTypes: ReadonlySet<string>;
   readonly #placement = new PlacementSystem();
   readonly #effectPool = new CombatEffectPool();
   readonly #listeners = new Set<() => void>();
@@ -304,12 +344,43 @@ export class CampaignSession {
   #reducedMotion = false;
 
   constructor(options: CampaignSessionOptions = {}) {
-    this.map = options.map ?? (map01 as unknown as MapDefinition);
-    this.waves = options.waves ?? (waveDefinitions as unknown as readonly WaveDefinition[]);
     this.#storage = options.storage ?? new GameStorage(
       typeof localStorage === "undefined" ? null : localStorage,
     );
     this.#settings = this.#storage.loadSettings();
+    this.levelId = options.levelId ?? "level-1";
+    this.#level = getLevelDefinition(this.levelId);
+    this.levelName = this.#level.name;
+    this.contentVersion = options.contentVersion ?? this.#level.contentVersion;
+    this.levels = options.levels ?? levelDefinitions;
+    this.map = options.map ?? (
+      this.levelId === "level-1"
+        ? map01 as unknown as MapDefinition
+        : this.#level.map
+    );
+    this.waves = options.waves ?? (
+      this.levelId === "level-1"
+        ? waveDefinitions as unknown as readonly WaveDefinition[]
+        : this.#level.waves
+    );
+    this.#availableTowerTypes = new Set(
+      options.availableTowerTypes ?? this.#level.availableTowerTypes,
+    );
+    this.#availableEnemyTypes = new Set(
+      options.availableEnemyTypes ?? this.#level.availableEnemyTypes,
+    );
+    for (const type of this.#availableTowerTypes) {
+      if (!towerCatalog[type]) throw new Error(`Level contains an unknown tower type: ${type}`);
+    }
+    for (const wave of this.waves) {
+      for (const group of wave.groups) {
+        if (!this.#availableEnemyTypes.has(group.type) || !enemyCatalog[group.type]) {
+          throw new Error(`Level wave contains unavailable enemy type: ${group.type}`);
+        }
+      }
+    }
+    this.#settings = { ...this.#settings, selectedLevelId: this.levelId };
+    this.#saveSettings();
     this.grid = new Grid(this.map);
     this.converter = new CoordinateConverter(this.map.tileSize);
     if (this.map.enemyRoute.length < 2 || this.map.enemyRoute.some((cell) => !this.grid.isWalkable(cell))) {
@@ -385,7 +456,32 @@ export class CampaignSession {
   }
 
   get bestScore(): number {
-    return this.#settings.bestScore;
+    return this.#settings.bestScoreByLevel[this.levelId] ?? 0;
+  }
+
+  get levelOptions(): readonly LevelOption[] {
+    return this.levels.map((level) => ({
+      id: level.id,
+      number: level.number,
+      name: level.name,
+      description: level.description,
+      unlocked: level.number <= 2 && this.#settings.unlockedLevelIds.includes(level.id),
+      completed: this.#settings.completedLevelIds.includes(level.id),
+      bestScore: this.#settings.bestScoreByLevel[level.id] ?? 0,
+      bestDifficulty: this.#settings.bestDifficultyByLevel[level.id] ?? null,
+    }));
+  }
+
+  get nextLevelId(): LevelId | null {
+    const next = this.#level.unlocksLevelId;
+    return next && this.#settings.unlockedLevelIds.includes(next) ? next : null;
+  }
+
+  isLevelUnlocked(levelId: LevelId): boolean {
+    const level = this.levels.find((candidate) => candidate.id === levelId);
+    return level !== undefined
+      && level.number <= 2
+      && this.#settings.unlockedLevelIds.includes(levelId);
   }
 
   get audioSettings(): AudioSettings {
@@ -416,7 +512,17 @@ export class CampaignSession {
   }
 
   get towerOptions(): readonly TowerContent[] {
-    return Object.values(towerCatalog);
+    const towers: TowerContent[] = [];
+    for (const type of this.#availableTowerTypes) {
+      const tower = towerCatalog[type];
+      if (tower) towers.push(tower);
+    }
+    return towers;
+  }
+
+  openLevelSelect(): void {
+    this.flow.openLevelSelect();
+    this.#emit();
   }
 
   openDifficulty(): void {
@@ -439,7 +545,11 @@ export class CampaignSession {
     this.#nextTower = 1;
     this.#waveLivesAtStart = content.lives;
     this.#autosaveElapsed = 0;
-    this.#settings = { ...this.#settings, difficulty };
+    this.#settings = {
+      ...this.#settings,
+      difficulty,
+      selectedLevelId: this.levelId,
+    };
     this.#saveSettings();
     this.#showMessage(
       this.flow.phase === "tutorial"
@@ -496,6 +606,21 @@ export class CampaignSession {
       this.#savedGameAvailable = true;
     }
     this.flow.returnToMenu();
+    this.#state.selectedBuildType = null;
+    this.#state.selectedTowerId = null;
+    this.#state.placementPreview = null;
+    this.#emit();
+  }
+
+  returnToLevelSelect(): void {
+    if (this.flow.phase === "preparing"
+      || this.flow.phase === "wave"
+      || this.flow.phase === "paused"
+      || this.flow.phase === "tutorial") {
+      this.#saveGame();
+      this.#savedGameAvailable = true;
+    }
+    this.flow.openLevelSelect();
     this.#state.selectedBuildType = null;
     this.#state.selectedTowerId = null;
     this.#state.placementPreview = null;
@@ -766,7 +891,7 @@ export class CampaignSession {
   #createState(difficultyId: DifficultyId): CampaignRuntime {
     const difficulty = this.#difficulty(difficultyId);
     const towerDefinitions = new Map<string, TowerDefinition>();
-    for (const tower of Object.values(towerCatalog)) {
+    for (const tower of this.towerOptions) {
       towerDefinitions.set(tower.id, {
         type: tower.id,
         defaultTargeting: tower.targeting,
@@ -817,7 +942,16 @@ export class CampaignSession {
     this.#waveSystem = new WaveSystem(this.waves, {
       createEnemy: (type: string) => this.#createEnemy(type, difficulty),
     }) as unknown as WaveSystemPort;
-    this.#battle = new BattleSimulation(this.path) as unknown as BattleSimulationPort;
+    this.#battle = new BattleSimulation(this.path, {
+      createEnemy: (
+        type: string,
+        overrides?: {
+          readonly progress?: number;
+          readonly position?: Position;
+          readonly splitGeneration?: number;
+        },
+      ) => this.#createEnemy(type, difficulty, undefined, overrides),
+    }) as unknown as BattleSimulationPort;
     const reducedMotion = this.#state.reducedMotion;
     this.#effectPool.clear();
     this.#effectPool.setReducedMotion(reducedMotion);
@@ -830,26 +964,34 @@ export class CampaignSession {
     difficulty = this.#difficulty(this.flow.difficulty),
     currentHealth?: number,
     saved?: {
-      readonly id: string;
-      readonly progress: number;
-      readonly position: Position;
-      readonly statusEffects: readonly Record<string, unknown>[];
-      readonly bossPhase: number;
+      readonly id?: string;
+      readonly progress?: number;
+      readonly position?: Position;
+      readonly statusEffects?: readonly Record<string, unknown>[];
+      readonly bossPhase?: number;
+      readonly shield?: number;
+      readonly splitGeneration?: number;
     },
   ): EnemyEntity {
     const definition = enemyCatalog[type];
-    if (!definition) throw new Error(`Unknown enemy type: ${type}`);
+    if (!definition || !this.#availableEnemyTypes.has(type)) {
+      throw new Error(`Enemy type is unavailable in ${this.levelName}: ${type}`);
+    }
     const maxHealth = Math.round(definition.health * difficulty.enemyHealth);
+    const maxShield = Math.round((definition.shield ?? 0) * difficulty.enemyHealth);
     const enemy = new Enemy(type, {
       id: saved?.id,
       health: maxHealth,
       currentHealth: currentHealth ?? maxHealth,
+      maxShield,
+      shield: saved?.shield ?? maxShield,
       speed: definition.speed * difficulty.enemySpeed,
       reward: Math.max(1, Math.round(definition.reward * difficulty.enemyReward)),
       progress: saved?.progress ?? 0,
       position: saved?.position ?? this.path.getPointAt(saved?.progress ?? 0),
       statusEffects: saved?.statusEffects ?? [],
       bossPhase: saved?.bossPhase ?? 1,
+      splitGeneration: saved?.splitGeneration ?? 0,
     }) as unknown as EnemyEntity;
     if (enemy.bossPhase === 2) enemy.abilitySpeedMultiplier = 1.18;
     if (enemy.bossPhase === 3) enemy.abilitySpeedMultiplier = 1.42;
@@ -926,13 +1068,39 @@ export class CampaignSession {
   #finish(outcome: "victory" | "defeat"): void {
     if (outcome === "victory") {
       this.#state.score += this.#scoreValue(rewards.victoryBonus);
-      this.#showMessage("The River Outpost is secure.", "success");
+      this.#showMessage(`${this.levelName} is secure.`, "success");
     } else {
       this.#showMessage("The outpost has fallen.", "error");
     }
     this.flow.finish(outcome);
-    const bestScore = Math.max(this.#settings.bestScore, this.#state.score);
-    this.#settings = { ...this.#settings, bestScore };
+    const bestScoreByLevel = {
+      ...this.#settings.bestScoreByLevel,
+      [this.levelId]: Math.max(this.bestScore, this.#state.score),
+    };
+    let completedLevelIds = [...this.#settings.completedLevelIds];
+    let unlockedLevelIds = [...this.#settings.unlockedLevelIds];
+    let bestDifficultyByLevel = { ...this.#settings.bestDifficultyByLevel };
+    if (outcome === "victory") {
+      if (!completedLevelIds.includes(this.levelId)) completedLevelIds.push(this.levelId);
+      const next = this.#level.unlocksLevelId;
+      if (next && !unlockedLevelIds.includes(next)) unlockedLevelIds.push(next);
+      const rank: Readonly<Record<DifficultyId, number>> = { easy: 1, normal: 2, hard: 3 };
+      const previous = bestDifficultyByLevel[this.levelId];
+      if (!previous || rank[this.flow.difficulty] > rank[previous]) {
+        bestDifficultyByLevel = {
+          ...bestDifficultyByLevel,
+          [this.levelId]: this.flow.difficulty,
+        };
+      }
+    }
+    this.#settings = {
+      ...this.#settings,
+      selectedLevelId: this.levelId,
+      unlockedLevelIds,
+      completedLevelIds,
+      bestScoreByLevel,
+      bestDifficultyByLevel,
+    };
     this.#saveSettings();
     this.#storage.clearGame();
     this.#savedGameAvailable = false;
@@ -968,10 +1136,14 @@ export class CampaignSession {
 
   #saveGame(): void {
     if (this.flow.phase === "menu"
+      || this.flow.phase === "level-select"
       || this.flow.phase === "difficulty"
       || this.flow.phase === "victory"
       || this.flow.phase === "defeat") return;
     this.#storage.saveGame({
+      levelId: this.levelId,
+      mapId: this.map.id,
+      contentVersion: this.contentVersion,
       flow: this.flow.snapshot(),
       lives: this.#state.lives,
       gold: this.#state.players.get(PLAYER_ID)!.balance,
@@ -990,6 +1162,8 @@ export class CampaignSession {
         id: enemy.id,
         type: enemy.type,
         health: enemy.health,
+        shield: enemy.shield,
+        splitGeneration: enemy.splitGeneration,
         progress: enemy.progress,
         position: { ...enemy.position },
         statusEffects: enemy.statusEffects.map((effect) => ({ ...effect })),
@@ -1001,6 +1175,11 @@ export class CampaignSession {
   }
 
   #restore(save: ActiveGameSave): void {
+    if (save.levelId !== this.levelId
+      || save.mapId !== this.map.id
+      || save.contentVersion !== this.contentVersion) {
+      throw new Error("Save is incompatible with the selected level content");
+    }
     if (!Number.isInteger(save.nextTower) || save.nextTower < 1
       || !Number.isFinite(save.waveLivesAtStart) || save.waveLivesAtStart < 0) {
       throw new Error("Save contains invalid session counters");
@@ -1014,6 +1193,9 @@ export class CampaignSession {
     this.#state = restoredState;
     this.flow.restore(save.flow);
     this.#resetSystems();
+    if (save.wave.queue.some((entry) => !this.#availableEnemyTypes.has(entry.type))) {
+      throw new Error("Save contains an unavailable queued enemy");
+    }
     this.#waveSystem.restore(save.wave);
     this.#nextTower = save.nextTower;
     this.#waveLivesAtStart = save.waveLivesAtStart;
@@ -1048,8 +1230,15 @@ export class CampaignSession {
       if (typeof savedEnemy.id !== "string"
         || savedEnemy.id.length === 0
         || !enemyCatalog[savedEnemy.type]
+        || !this.#availableEnemyTypes.has(savedEnemy.type)
         || !Number.isFinite(savedEnemy.health)
         || savedEnemy.health < 0
+        || (savedEnemy.shield !== undefined
+          && (!Number.isFinite(savedEnemy.shield) || savedEnemy.shield < 0))
+        || (savedEnemy.splitGeneration !== undefined
+          && (!Number.isInteger(savedEnemy.splitGeneration)
+            || savedEnemy.splitGeneration < 0
+            || savedEnemy.splitGeneration > 1))
         || !Number.isFinite(savedEnemy.progress)
         || savedEnemy.progress < 0
         || savedEnemy.progress > 1
@@ -1076,6 +1265,7 @@ export class CampaignSession {
       ...this.#settings,
       difficulty: difficulty.id,
       speed: this.flow.speed,
+      selectedLevelId: this.levelId,
     };
     this.#saveSettings();
   }
@@ -1085,10 +1275,14 @@ export class CampaignSession {
       tutorialSeen: this.#settings.tutorialSeen,
       difficulty: this.#settings.difficulty,
       speed: this.#settings.speed,
-      bestScore: this.#settings.bestScore,
       soundEnabled: this.#settings.soundEnabled,
       musicVolume: this.#settings.musicVolume,
       sfxVolume: this.#settings.sfxVolume,
+      selectedLevelId: this.#settings.selectedLevelId,
+      unlockedLevelIds: this.#settings.unlockedLevelIds,
+      completedLevelIds: this.#settings.completedLevelIds,
+      bestScoreByLevel: this.#settings.bestScoreByLevel,
+      bestDifficultyByLevel: this.#settings.bestDifficultyByLevel,
     });
   }
 
@@ -1098,7 +1292,9 @@ export class CampaignSession {
 
   #tower(type: string): TowerContent {
     const tower = towerCatalog[type];
-    if (!tower) throw new CommandValidationError(`Unknown tower type: ${type}`);
+    if (!tower || !this.#availableTowerTypes.has(type)) {
+      throw new CommandValidationError(`Tower type is unavailable in ${this.levelName}: ${type}`);
+    }
     return tower;
   }
 

@@ -13,6 +13,8 @@ const icons: Readonly<Record<string, string>> = {
   frost: "❄",
   cannon: "●",
   sniper: "⌖",
+  tesla: "⚡",
+  poison: "☠",
 };
 
 export const isGameplayPhase = (phase: string): boolean =>
@@ -95,6 +97,9 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
         return `${effect.type} ${Math.ceil(effect.remaining)}s`;
       });
       if (enemy.regeneration > 0) activeEffects.push(`Regenerating ${enemy.regeneration}/s`);
+      if (enemy.shield > 0) {
+        activeEffects.push(`Shield ${Math.ceil(enemy.shield)}/${enemy.maxShield}`);
+      }
       if (enemy.boss) activeEffects.push(`Boss phase ${enemy.bossPhase}`);
       return {
         name: enemy.name,
@@ -115,6 +120,12 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
           bestScore: session.bestScore,
         };
       }
+      if (session.phase === "level-select") {
+        return {
+          kind: "level-select",
+          options: session.levelOptions,
+        };
+      }
       if (session.phase === "difficulty") {
         return {
           kind: "difficulty",
@@ -130,7 +141,14 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
       if (session.phase === "tutorial") return { kind: "tutorial" };
       if (session.phase === "paused") return { kind: "paused" };
       if (session.phase === "victory") {
-        return { kind: "victory", score: state.score, bestScore: session.bestScore };
+        return {
+          kind: "victory",
+          score: state.score,
+          bestScore: session.bestScore,
+          levelName: session.levelName,
+          totalWaves: session.totalWaves,
+          nextLevelId: session.nextLevelId,
+        };
       }
       if (session.phase === "defeat") {
         return { kind: "defeat", wave: session.currentWaveNumber, score: state.score };

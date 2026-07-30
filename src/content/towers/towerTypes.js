@@ -96,6 +96,58 @@ export const towerTypes = Object.freeze({
       { cost: 350, sellValue: 610, damage: 245, range: 340, fireRate: 0.5, projectileSpeed: 820 },
     ],
   }),
+  tesla: defineTower({
+    id: "tesla",
+    name: "Tesla tower",
+    description: "Chain lightning strikes up to three clustered enemies.",
+    hotkey: "6",
+    targeting: "nearest",
+    damageType: "electric",
+    color: "#fde047",
+    levels: [
+      {
+        cost: 280, sellValue: 140, damage: 34, range: 155, fireRate: 0.72, projectileSpeed: 620,
+        chainCount: 3, chainFalloff: 0.68, chainRange: 105,
+      },
+      {
+        cost: 210, sellValue: 350, damage: 52, range: 168, fireRate: 0.82, projectileSpeed: 680,
+        chainCount: 3, chainFalloff: 0.72, chainRange: 116,
+      },
+      {
+        cost: 330, sellValue: 590, damage: 78, range: 182, fireRate: 0.95, projectileSpeed: 740,
+        chainCount: 3, chainFalloff: 0.76, chainRange: 128,
+      },
+    ],
+  }),
+  poison: defineTower({
+    id: "poison",
+    name: "Poison tower",
+    description: "Low direct damage refreshes a lingering poison effect.",
+    hotkey: "7",
+    targeting: "strongest",
+    damageType: "poison",
+    color: "#4ade80",
+    levels: [
+      {
+        cost: 210, sellValue: 105, damage: 8, range: 150, fireRate: 0.75, projectileSpeed: 330,
+        statusEffect: Object.freeze({
+          type: "damageOverTime", duration: 4, damagePerSecond: 13, damageType: "poison",
+        }),
+      },
+      {
+        cost: 160, sellValue: 265, damage: 13, range: 162, fireRate: 0.86, projectileSpeed: 360,
+        statusEffect: Object.freeze({
+          type: "damageOverTime", duration: 4.6, damagePerSecond: 20, damageType: "poison",
+        }),
+      },
+      {
+        cost: 260, sellValue: 465, damage: 20, range: 176, fireRate: 1, projectileSpeed: 390,
+        statusEffect: Object.freeze({
+          type: "damageOverTime", duration: 5.2, damagePerSecond: 30, damageType: "poison",
+        }),
+      },
+    ],
+  }),
 });
 
 export function getTowerType(type) {

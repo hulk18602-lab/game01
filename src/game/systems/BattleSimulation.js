@@ -11,13 +11,14 @@ import TargetingSystem from "./TargetingSystem.js";
  * Returned deltas are committed by the session/application layer.
  */
 export class BattleSimulation {
-  constructor(path) {
+  constructor(path, { createEnemy } = {}) {
     this.movement = new MovementSystem(path);
+    this.createEnemy = createEnemy;
     this.targeting = new TargetingSystem();
     this.combat = new CombatSystem();
     this.projectiles = new ProjectileSystem();
     this.statusEffects = new StatusEffectSystem();
-    this.abilities = new EnemyAbilitySystem();
+    this.abilities = new EnemyAbilitySystem({ createEnemy });
     this.cleanup = new CleanupSystem();
   }
 
@@ -32,6 +33,8 @@ export class BattleSimulation {
     this.targeting.update(towers, enemies);
     this.combat.update(deltaSeconds, towers, enemies, this.projectiles);
     this.projectiles.update(deltaSeconds, enemies, this.statusEffects);
+    const splitChildren = this.abilities.spawnOnDeath(enemies);
+    if (splitChildren.length > 0) enemies.push(...splitChildren);
     const wallet = { currency: 0 };
     this.cleanup.update(enemies, wallet);
     return {
@@ -46,7 +49,7 @@ export class BattleSimulation {
 
   reset() {
     this.projectiles = new ProjectileSystem();
-    this.abilities = new EnemyAbilitySystem();
+    this.abilities = new EnemyAbilitySystem({ createEnemy: this.createEnemy });
   }
 }
 

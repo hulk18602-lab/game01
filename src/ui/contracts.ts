@@ -1,5 +1,6 @@
 import type { DifficultyId, GameSpeed } from "../game/GameFlow.js";
 import type { TargetingMode } from "../game/types.js";
+import type { LevelId } from "../content/levels/levelDefinitions.js";
 
 /** Read-only projections consumed by the UI. Game entities never cross this boundary. */
 export interface HudView {
@@ -83,11 +84,26 @@ export interface DifficultyOptionView {
   readonly lives: number;
 }
 
+export interface LevelOptionView {
+  readonly id: LevelId;
+  readonly number: number;
+  readonly name: string;
+  readonly description: string;
+  readonly unlocked: boolean;
+  readonly completed: boolean;
+  readonly bestScore: number;
+  readonly bestDifficulty: DifficultyId | null;
+}
+
 export type OverlayView =
   | {
     readonly kind: "menu";
     readonly continueAvailable: boolean;
     readonly bestScore: number;
+  }
+  | {
+    readonly kind: "level-select";
+    readonly options: readonly LevelOptionView[];
   }
   | {
     readonly kind: "difficulty";
@@ -96,7 +112,14 @@ export type OverlayView =
   | { readonly kind: "tutorial" }
   | { readonly kind: "none" }
   | { readonly kind: "paused" }
-  | { readonly kind: "victory"; readonly score: number; readonly bestScore: number }
+  | {
+    readonly kind: "victory";
+    readonly score: number;
+    readonly bestScore: number;
+    readonly levelName: string;
+    readonly totalWaves: number;
+    readonly nextLevelId: LevelId | null;
+  }
   | { readonly kind: "defeat"; readonly wave: number; readonly score: number };
 
 export interface UiView {
@@ -112,6 +135,10 @@ export interface UiView {
 
 /** Commands are intent messages. The game/application layer owns all mutations. */
 export type UiCommand =
+  | { readonly type: "open-level-select" }
+  | { readonly type: "select-level"; readonly levelId: LevelId }
+  | { readonly type: "next-level"; readonly levelId: LevelId }
+  | { readonly type: "return-level-select" }
   | { readonly type: "open-difficulty" }
   | { readonly type: "new-game"; readonly difficulty: DifficultyId }
   | { readonly type: "continue-game" }

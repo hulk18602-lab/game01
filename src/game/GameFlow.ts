@@ -2,6 +2,7 @@ export type DifficultyId = "easy" | "normal" | "hard";
 export type GameSpeed = 1 | 2 | 3;
 export type GamePhase =
   | "menu"
+  | "level-select"
   | "difficulty"
   | "tutorial"
   | "preparing"
@@ -31,6 +32,10 @@ export class GameFlow {
 
   openDifficulty(): void {
     this.phase = "difficulty";
+  }
+
+  openLevelSelect(): void {
+    this.phase = "level-select";
   }
 
   startNewGame(difficulty: DifficultyId, tutorialRequired: boolean, preparationSeconds: number): void {
