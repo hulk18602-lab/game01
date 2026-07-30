@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { waveCompletionReward } from "../src/content/balance/rewards.js";
+import { createDefaultHeroSkills } from "../src/content/heroes/heroSkills.js";
 import { getLevelDefinition } from "../src/content/levels/levelDefinitions.js";
 import map02 from "../src/content/maps/map02.js";
 import map03 from "../src/content/maps/map03.js";
@@ -40,6 +41,9 @@ function seedProgress(storage: GameStorage, unlocked: readonly ("level-1" | "lev
     bestScoreByLevel: {},
     bestDifficultyByLevel: {},
     heroLevel: 1,
+    heroXp: 0,
+    heroSkillPoints: 0,
+    heroSkills: createDefaultHeroSkills(),
   });
 }
 

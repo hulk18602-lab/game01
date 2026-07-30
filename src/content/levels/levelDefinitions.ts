@@ -1,9 +1,11 @@
 import map01 from "../maps/map01.js";
 import map02 from "../maps/map02.js";
 import map03 from "../maps/map03.js";
+import map04 from "../maps/map04.js";
 import waveDefinitions from "../waves/waveDefinitions.js";
 import level02WaveDefinitions from "../waves/level02WaveDefinitions.js";
 import level03WaveDefinitions from "../waves/level03WaveDefinitions.js";
+import level04WaveDefinitions from "../waves/level04WaveDefinitions.js";
 import type { MapDefinition, WaveDefinition } from "../../game/CampaignSession.js";
 import type { Position } from "../../game/types.js";
 
@@ -40,6 +42,23 @@ const originalTowers = Object.freeze(["basic", "rapid", "frost", "cannon", "snip
 const originalEnemies = Object.freeze(["grunt", "runner", "tank", "armored", "regenerator", "boss"]);
 const serpentTowers = Object.freeze([...originalTowers, "tesla", "poison"]);
 const serpentEnemies = Object.freeze([...originalEnemies, "swarm", "shielded", "splitter"]);
+const citadelEnemies = Object.freeze([
+  ...serpentEnemies,
+  "eliteRunner",
+  "arcaneSentinel",
+  "stormLancer",
+  "archonBoss",
+]);
+const rowanStats = Object.freeze({
+  id: "hero-rowan",
+  name: "Rowan",
+  speed: 180,
+  range: 210,
+  damage: 28,
+  fireRate: 1.25,
+  projectileSpeed: 600,
+  xpToNextLevel: 80,
+});
 
 const defineLevel = (level: LevelDefinition): LevelDefinition => Object.freeze(level);
 
@@ -83,30 +102,26 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
     availableTowerTypes: serpentTowers,
     availableEnemyTypes: serpentEnemies,
     heroConfig: Object.freeze({
-      id: "hero-rowan",
-      name: "Rowan",
+      ...rowanStats,
       spawnCell: Object.freeze({ x: 11, y: 10 }),
-      speed: 180,
-      range: 210,
-      damage: 28,
-      fireRate: 1.25,
-      projectileSpeed: 600,
-      xpToNextLevel: 80,
     }),
-    unlocksLevelId: null,
+    unlocksLevelId: "level-4",
     contentVersion: 1,
   }),
   defineLevel({
     id: "level-4",
     number: 4,
-    playable: false,
-    name: "Dragon's Reach",
-    description: "A future campaign chapter, currently sealed.",
-    map: map02 as unknown as MapDefinition,
-    waves: level02WaveDefinitions as unknown as readonly WaveDefinition[],
+    playable: true,
+    name: "Arcane Citadel",
+    description: "Break the elite citadel guard and confront the Astral Archon.",
+    map: map04 as unknown as MapDefinition,
+    waves: level04WaveDefinitions as unknown as readonly WaveDefinition[],
     availableTowerTypes: serpentTowers,
-    availableEnemyTypes: serpentEnemies,
-    heroConfig: null,
+    availableEnemyTypes: citadelEnemies,
+    heroConfig: Object.freeze({
+      ...rowanStats,
+      spawnCell: Object.freeze({ x: 12, y: 11 }),
+    }),
     unlocksLevelId: null,
     contentVersion: 1,
   }),

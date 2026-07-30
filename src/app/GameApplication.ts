@@ -53,6 +53,9 @@ interface GameDebugApi {
     readonly level: number;
     readonly xp: number;
     readonly xpToNextLevel: number;
+    readonly skillPoints: number;
+    readonly skills: Readonly<Record<string, number>>;
+    readonly auraRadius: number;
     readonly arrowProjectiles: readonly ProjectileEntity[];
   } | null;
 }
@@ -234,6 +237,9 @@ export class GameApplication {
         case "upgrade-tower":
           session.upgradeTower(command.towerId);
           break;
+        case "upgrade-hero-skill":
+          session.upgradeHeroSkill(command.skillId);
+          break;
         case "sell-tower":
           session.sellTower(command.towerId);
           break;
@@ -362,6 +368,9 @@ export class GameApplication {
           level: hero.level,
           xp: hero.xp,
           xpToNextLevel: hero.xpToNextLevel,
+          skillPoints: hero.skillPoints,
+          skills: { ...hero.skills },
+          auraRadius: hero.auraRadius,
           arrowProjectiles: application.#runtime.session.projectiles.filter(
             (projectile) => projectile.projectileType === "arrow",
           ),

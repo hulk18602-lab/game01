@@ -12,7 +12,9 @@ export class CombatSystem {
     for (const enemy of enemies) this.enemiesById.set(enemy.id, enemy);
 
     for (const tower of towers) {
-      if (!Number.isFinite(tower.fireRate) || tower.fireRate <= 0) {
+      const fireRate = tower.effectiveFireRate ?? tower.fireRate;
+      const damage = tower.effectiveDamage ?? tower.damage;
+      if (!Number.isFinite(fireRate) || fireRate <= 0) {
         throw new RangeError('Tower fireRate must be a positive number');
       }
       tower.cooldown = Math.max(0, (tower.cooldown ?? 0) - deltaSeconds);
@@ -24,7 +26,7 @@ export class CombatSystem {
         sourceId: tower.id,
         targetId: target.id,
         position: { ...sourcePosition },
-        damage: tower.damage,
+        damage,
         damageType: tower.damageType,
         speed: tower.projectileSpeed,
         areaRadius: tower.areaRadius,
@@ -35,7 +37,7 @@ export class CombatSystem {
         projectileType: tower.projectileType,
         statusEffect: tower.statusEffect,
       });
-      tower.cooldown = 1 / tower.fireRate;
+      tower.cooldown = 1 / fireRate;
     }
   }
 }

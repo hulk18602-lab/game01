@@ -273,11 +273,11 @@ test("Shielded absorbs damage before health and Splitter divides only once", () 
   assert.equal(abilities.spawnOnDeath(children).length, 0);
 });
 
-test("catalog declares four levels while the first three are playable", () => {
+test("catalog declares four playable campaign levels", () => {
   assert.deepEqual(levelDefinitions.map((level) => level.id), [
     "level-1", "level-2", "level-3", "level-4",
   ]);
   assert.deepEqual(levelDefinitions.map((level) => level.playable), [
-    true, true, true, false,
+    true, true, true, true,
   ]);
 });

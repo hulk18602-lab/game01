@@ -5,6 +5,11 @@ import {
   waveCompletionReward,
 } from "../content/balance/rewards.js";
 import enemyTypes from "../content/enemies/enemyTypes.js";
+import {
+  heroSkillDefinitions,
+  type HeroSkillId,
+  type HeroSkillLevels,
+} from "../content/heroes/heroSkills.js";
 import levelDefinitions, {
   getLevelDefinition,
   type LevelDefinition,
@@ -40,7 +45,9 @@ import {
   type RuntimeTowerDefinition,
 } from "./runtime.js";
 import { BattleSimulation } from "./systems/index.js";
+import { HeroExperienceSystem } from "./systems/HeroExperienceSystem.js";
 import { HeroMovementSystem, type HeroMovementInput } from "./systems/HeroMovementSystem.js";
+import { TowerAuraSystem } from "./systems/TowerAuraSystem.js";
 import {
   cellKey,
   type CellDefinition,
@@ -122,6 +129,7 @@ export interface EnemyContent {
   readonly splitInto?: string;
   readonly splitCount?: number;
   readonly boss?: boolean;
+  readonly elite?: boolean;
   readonly color: string;
   readonly radius: number;
 }
@@ -133,6 +141,7 @@ export interface StatusEffect {
   readonly multiplier?: number;
   readonly damagePerSecond?: number;
   readonly damageType?: string;
+  readonly sourceId?: string;
 }
 
 export interface EnemyEntity {
@@ -156,12 +165,15 @@ export interface EnemyEntity {
   readonly armor: number;
   readonly regeneration: number;
   readonly boss: boolean;
+  readonly elite: boolean;
   bossPhase: number;
   progress: number;
   position: { x: number; y: number };
   speedMultiplier: number;
   abilitySpeedMultiplier: number;
   statusEffects: StatusEffect[];
+  damageContributors: Map<string, number>;
+  lastDamageSourceId?: string;
   dead: boolean;
   reachedBase: boolean;
   pendingRemoval: boolean;
@@ -342,6 +354,8 @@ export class CampaignSession {
   readonly #availableEnemyTypes: ReadonlySet<string>;
   readonly #placement = new PlacementSystem();
   readonly #effectPool = new CombatEffectPool();
+  readonly #heroExperience = new HeroExperienceSystem();
+  readonly #towerAura = new TowerAuraSystem();
   readonly #listeners = new Set<() => void>();
   readonly #presentationListeners = new Set<(cue: PresentationCue) => void>();
   #settings: GameSettings;
@@ -797,6 +811,24 @@ export class CampaignSession {
     this.#emit();
   }
 
+  upgradeHeroSkill(skillId: HeroSkillId): void {
+    if (!(skillId in heroSkillDefinitions)) {
+      throw new CommandValidationError("Unknown hero skill.");
+    }
+    const hero = this.#state.hero;
+    if (!hero) throw new CommandValidationError("This level has no controllable hero.");
+    const error = hero.skillUpgradeError(skillId);
+    if (error) throw new CommandValidationError(error);
+    hero.upgradeSkill(skillId);
+    this.#towerAura.update(hero, this.#state.runtimeTowers);
+    this.#showMessage(
+      `${heroSkillDefinitions[skillId].name} upgraded to level ${hero.skills[skillId]}.`,
+      "success",
+    );
+    this.#saveGame();
+    this.#emit();
+  }
+
   setHeroMovementInput(input: HeroMovementInput): void {
     const x = Number.isFinite(input.x) ? Math.max(-1, Math.min(1, input.x)) : 0;
     const y = Number.isFinite(input.y) ? Math.max(-1, Math.min(1, input.y)) : 0;
@@ -812,6 +844,7 @@ export class CampaignSession {
     const id = `tower-${this.#nextTower}`;
     const tower = new PlaceTowerCommand(PLAYER_ID, id, type, cell).execute(this.#state);
     this.#state.runtimeTowers.push(this.#createRuntimeTower(tower));
+    this.#towerAura.update(this.#state.hero, this.#state.runtimeTowers);
     this.#nextTower += 1;
     this.#state.selectedTowerId = null;
     this.#showMessage(`${this.#tower(type).name} built.`, "success");
@@ -841,6 +874,7 @@ export class CampaignSession {
   upgradeTower(id: string): Tower {
     const tower = new UpgradeTowerCommand(PLAYER_ID, id).execute(this.#state);
     this.#replaceRuntimeTower(tower);
+    this.#towerAura.update(this.#state.hero, this.#state.runtimeTowers);
     this.#showMessage(`${this.#tower(tower.type).name} upgraded to level ${tower.level + 1}.`, "success");
     this.#publish({ type: "upgrade" });
     this.#saveGame();
@@ -896,6 +930,7 @@ export class CampaignSession {
       );
       this.#state.hero.tickAnimation(scaledDelta);
     }
+    this.#towerAura.update(this.#state.hero, this.#state.runtimeTowers);
 
     if (this.flow.phase === "preparing") {
       if (this.flow.update(scaledDelta)) this.startWave(false);
@@ -979,7 +1014,12 @@ export class CampaignSession {
       message: null,
       enemies: [],
       runtimeTowers: [],
-      hero: this.#createHero(this.#settings.heroLevel),
+      hero: this.#createHero({
+        level: this.#settings.heroLevel,
+        xp: this.#settings.heroXp,
+        skillPoints: this.#settings.heroSkillPoints,
+        skills: this.#settings.heroSkills,
+      }),
       selectedHeroId: null,
       effects: [],
       screenShake: 0,
@@ -1020,22 +1060,28 @@ export class CampaignSession {
     this.#effectPool.setReducedMotion(reducedMotion);
     this.#state.effects = this.#effectPool.effects;
     this.#state.screenShake = 0;
+    this.#towerAura.update(this.#state.hero, this.#state.runtimeTowers);
   }
 
-  #createHero(
-    level: number,
-    xp = 0,
-    position?: Position,
-    moveTarget: Position | null = null,
-  ): HeroEntity | null {
+  #createHero(options: {
+    readonly level: number;
+    readonly xp?: number;
+    readonly skillPoints?: number;
+    readonly skills?: Readonly<Partial<HeroSkillLevels>>;
+    readonly position?: Position;
+    readonly moveTarget?: Position | null;
+  }): HeroEntity | null {
     const definition = this.#level.heroConfig;
     if (!definition) return null;
-    const spawn = position ?? this.converter.gridToWorld(definition.spawnCell, { center: true });
+    const spawn = options.position
+      ?? this.converter.gridToWorld(definition.spawnCell, { center: true });
     return new HeroEntity(definition, {
       position: spawn,
-      moveTarget,
-      level,
-      xp,
+      moveTarget: options.moveTarget,
+      level: options.level,
+      xp: options.xp,
+      skillPoints: options.skillPoints,
+      skills: options.skills,
     });
   }
 
@@ -1051,6 +1097,7 @@ export class CampaignSession {
       readonly bossPhase?: number;
       readonly shield?: number;
       readonly splitGeneration?: number;
+      readonly damageContributors?: readonly (readonly [string, number])[];
     },
   ): EnemyEntity {
     const definition = enemyCatalog[type];
@@ -1072,6 +1119,7 @@ export class CampaignSession {
       statusEffects: saved?.statusEffects ?? [],
       bossPhase: saved?.bossPhase ?? 1,
       splitGeneration: saved?.splitGeneration ?? 0,
+      damageContributors: saved?.damageContributors ?? [],
     }) as unknown as EnemyEntity;
     if (enemy.bossPhase === 2) enemy.abilitySpeedMultiplier = 1.18;
     if (enemy.bossPhase === 3) enemy.abilitySpeedMultiplier = 1.42;
@@ -1181,8 +1229,17 @@ export class CampaignSession {
       bestScoreByLevel,
       bestDifficultyByLevel,
       heroLevel: outcome === "victory" && this.#state.hero
-        ? Math.max(this.#settings.heroLevel, this.#state.hero.level)
+        ? this.#state.hero.level
         : this.#settings.heroLevel,
+      heroXp: outcome === "victory" && this.#state.hero
+        ? this.#state.hero.xp
+        : this.#settings.heroXp,
+      heroSkillPoints: outcome === "victory" && this.#state.hero
+        ? this.#state.hero.skillPoints
+        : this.#settings.heroSkillPoints,
+      heroSkills: outcome === "victory" && this.#state.hero
+        ? { ...this.#state.hero.skills }
+        : this.#settings.heroSkills,
     };
     this.#saveSettings();
     this.#storage.clearGame();
@@ -1193,12 +1250,15 @@ export class CampaignSession {
   #recordBattleEvents(events: readonly BattleEvent[]): void {
     for (const event of events) {
       const hero = this.#state.hero;
-      if (hero && event.sourceId === hero.id) {
-        if (event.type === "shot") hero.shotAnimation = 1;
+      if (hero) {
+        if (event.type === "shot" && event.sourceId === hero.id) hero.shotAnimation = 1;
         if (event.type === "enemy-death") {
-          const levels = hero.gainXp(Math.max(1, Math.floor(event.reward ?? 1)));
-          if (levels > 0) {
-            this.#showMessage(`${hero.name} reached level ${hero.level}.`, "success");
+          const experience = this.#heroExperience.award(event, hero);
+          if (experience.levelsGained > 0) {
+            this.#showMessage(
+              `${hero.name} reached level ${hero.level} and gained ${experience.levelsGained} skill point${experience.levelsGained === 1 ? "" : "s"}.`,
+              "success",
+            );
           }
         }
       }
@@ -1260,6 +1320,7 @@ export class CampaignSession {
         progress: enemy.progress,
         position: { ...enemy.position },
         statusEffects: enemy.statusEffects.map((effect) => ({ ...effect })),
+        damageContributors: [...enemy.damageContributors.entries()],
         bossPhase: enemy.bossPhase,
       })),
       hero: this.#state.hero ? {
@@ -1268,6 +1329,8 @@ export class CampaignSession {
         moveTarget: this.#state.hero.moveTarget ? { ...this.#state.hero.moveTarget } : null,
         level: this.#state.hero.level,
         xp: this.#state.hero.xp,
+        skillPoints: this.#state.hero.skillPoints,
+        skills: { ...this.#state.hero.skills },
       } : null,
       wave: this.#waveSystem.snapshot(),
     });
@@ -1300,13 +1363,19 @@ export class CampaignSession {
             || !this.grid.isWalkable(this.converter.worldToGrid(save.hero.moveTarget))))) {
         throw new Error("Save contains an invalid hero");
       }
-      const restoredHero = this.#createHero(
-        save.hero.level,
-        save.hero.xp,
-        save.hero.position,
-        save.hero.moveTarget,
-      );
-      if (!restoredHero || save.hero.xp >= restoredHero.xpToNextLevel) {
+      const restoredHero = this.#createHero({
+        level: save.hero.level,
+        xp: save.hero.xp,
+        skillPoints: save.hero.skillPoints,
+        skills: save.hero.skills,
+        position: save.hero.position,
+        moveTarget: save.hero.moveTarget,
+      });
+      if (!restoredHero
+        || (restoredHero.level < restoredHero.maximumLevel
+          && save.hero.xp >= restoredHero.xpToNextLevel)
+        || Object.values(restoredHero.skills).reduce((total, level) => total + level, 0)
+          + restoredHero.skillPoints > restoredHero.level - 1) {
         throw new Error("Save contains invalid hero progression");
       }
       restoredState.hero = restoredHero;
@@ -1349,6 +1418,7 @@ export class CampaignSession {
       this.#state.occupiedCells.set(cellKey(tower.position), tower.id);
       this.#state.runtimeTowers.push(this.#createRuntimeTower(tower));
     }
+    this.#towerAura.update(this.#state.hero, this.#state.runtimeTowers);
     if (this.#state.hero) {
       this.#heroMovement.restoreDestination(
         this.#state.hero,
@@ -1415,6 +1485,9 @@ export class CampaignSession {
       bestScoreByLevel: this.#settings.bestScoreByLevel,
       bestDifficultyByLevel: this.#settings.bestDifficultyByLevel,
       heroLevel: this.#settings.heroLevel,
+      heroXp: this.#settings.heroXp,
+      heroSkillPoints: this.#settings.heroSkillPoints,
+      heroSkills: this.#settings.heroSkills,
     });
   }
 

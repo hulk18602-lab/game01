@@ -36,6 +36,28 @@ export class BattleSimulation {
     this.combat.update(deltaSeconds, towers, enemies, this.projectiles);
     this.heroCombat.update(deltaSeconds, hero, enemies, this.projectiles);
     this.projectiles.update(deltaSeconds, enemies, this.statusEffects);
+    const projectileEvents = this.projectiles.drainEvents();
+    const recordedDeaths = new Set(
+      projectileEvents
+        .filter((event) => event.type === "enemy-death")
+        .map((event) => event.targetId),
+    );
+    for (const enemy of enemies) {
+      if (enemy.health > 0 || enemy.removalReason === "reached-base" || recordedDeaths.has(enemy.id)) {
+        continue;
+      }
+      projectileEvents.push({
+        type: "enemy-death",
+        sourceId: enemy.lastDamageSourceId ?? "",
+        targetId: enemy.id,
+        position: { ...enemy.position },
+        damageType: "status",
+        reward: enemy.reward ?? 0,
+        contributions: [...(enemy.damageContributors ?? new Map())].map(
+          ([sourceId, damage]) => ({ sourceId, damage }),
+        ),
+      });
+    }
     const splitChildren = this.abilities.spawnOnDeath(enemies);
     if (splitChildren.length > 0) enemies.push(...splitChildren);
     const wallet = { currency: 0 };
@@ -44,7 +66,7 @@ export class BattleSimulation {
       baseDamage,
       reward: wallet.currency,
       events: [
-        ...this.projectiles.drainEvents(),
+        ...projectileEvents,
         ...this.abilities.drainEvents(),
       ],
     };

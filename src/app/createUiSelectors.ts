@@ -2,6 +2,10 @@ import {
   type CampaignRuntime,
   type CampaignSession,
 } from "../game/CampaignSession.js";
+import {
+  heroSkillDefinitions,
+  heroSkillIds,
+} from "../content/heroes/heroSkills.js";
 import type {
   OverlayView,
   UiSelectors,
@@ -70,6 +74,7 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
       if (!definition) return null;
       const current = definition.levels[tower.level]!;
       const next = definition.levels[tower.level + 1];
+      const runtime = state.runtimeTowers.find((candidate) => candidate.id === tower.id);
       const money = state.players.get("player")!.balance;
       return {
         id: tower.id,
@@ -78,6 +83,9 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
         damage: current.damage,
         range: current.range,
         fireRate: current.fireRate,
+        effectiveDamage: runtime?.effectiveDamage ?? current.damage,
+        effectiveFireRate: runtime?.effectiveFireRate ?? current.fireRate,
+        auraBuffed: runtime?.auraBuffed ?? false,
         targeting: tower.targeting,
         upgradeCost: next?.cost ?? null,
         upgradeAffordable: next ? money >= next.cost : false,
@@ -120,12 +128,38 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
         id: hero.id,
         name: hero.name,
         level: hero.level,
+        maximumLevel: hero.maximumLevel,
         xp: hero.xp,
         xpToNextLevel: hero.xpToNextLevel,
         damage: hero.damage,
         range: hero.range,
         fireRate: hero.fireRate,
         target: target?.name ?? null,
+        skillPoints: hero.skillPoints,
+        auraRadius: hero.auraRadius,
+      };
+    },
+    heroSkills: (state) => {
+      const hero = state.hero;
+      if (!hero || !isGameplayPhase(session.phase)) return null;
+      return {
+        skillPoints: hero.skillPoints,
+        skills: heroSkillIds.map((skillId) => {
+          const definition = heroSkillDefinitions[skillId];
+          const level = hero.skills[skillId];
+          const next = definition.levels[level];
+          const blockedReason = hero.skillUpgradeError(skillId);
+          return {
+            id: skillId,
+            name: definition.name,
+            description: definition.description,
+            level,
+            maximumLevel: definition.levels.length,
+            nextBonus: next?.bonusText ?? "Maximum level reached",
+            upgradeAvailable: blockedReason === null,
+            blockedReason,
+          };
+        }),
       };
     },
     overlay: (state): OverlayView => {

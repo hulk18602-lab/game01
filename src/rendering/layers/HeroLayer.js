@@ -11,6 +11,26 @@ export class HeroLayer {
     const time = state.visualTime ?? 0;
     const reducedMotion = state.reducedMotion === true;
 
+    if ((hero.auraRadius ?? 0) > 0) {
+      const pulse = reducedMotion ? 0 : Math.sin(time * 3.4) * 3;
+      context.save();
+      context.fillStyle = "rgba(250, 204, 21, .055)";
+      context.strokeStyle = hero.skillFeedback > 0 ? "#fff7ae" : "rgba(253, 224, 71, .58)";
+      context.lineWidth = 2 + (hero.skillFeedback ?? 0) * 4;
+      context.setLineDash([12, 8]);
+      context.beginPath();
+      context.arc(
+        hero.position.x,
+        hero.position.y,
+        hero.auraRadius + pulse + (hero.skillFeedback ?? 0) * 20,
+        0,
+        Math.PI * 2,
+      );
+      context.fill();
+      context.stroke();
+      context.restore();
+    }
+
     if (selected) {
       context.save();
       context.globalAlpha = 0.12;
@@ -87,6 +107,10 @@ export class HeroLayer {
     context.font = "800 11px system-ui";
     context.textAlign = "center";
     context.fillText(`Lv ${hero.level}`, hero.position.x, hero.position.y - 31);
+    if (hero.skillPoints > 0) {
+      context.fillStyle = "#fde047";
+      context.fillText(`+${hero.skillPoints} skill`, hero.position.x, hero.position.y - 43);
+    }
     context.restore();
   }
 

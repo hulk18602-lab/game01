@@ -10,6 +10,11 @@ export interface RuntimeTower {
   readonly range: number;
   readonly damage: number;
   readonly fireRate: number;
+  readonly baseDamage: number;
+  readonly baseFireRate: number;
+  effectiveDamage: number;
+  effectiveFireRate: number;
+  auraBuffed: boolean;
   readonly projectileSpeed: number;
   targeting: string;
   readonly damageType?: string;
@@ -80,6 +85,11 @@ export function createRuntimeTower(
     range: level.range,
     damage: level.damage,
     fireRate: level.fireRate,
+    baseDamage: level.damage,
+    baseFireRate: level.fireRate,
+    effectiveDamage: level.damage,
+    effectiveFireRate: level.fireRate,
+    auraBuffed: false,
     projectileSpeed: level.projectileSpeed,
     targeting: tower.targeting ?? definition.targeting,
     statusEffect: level.statusEffect,

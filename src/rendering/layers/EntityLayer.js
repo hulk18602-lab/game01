@@ -46,6 +46,18 @@ export class EntityLayer {
 
     context.save();
     context.translate(position.x, position.y);
+    if (tower.auraBuffed) {
+      context.fillStyle = "rgba(250, 204, 21, .13)";
+      context.strokeStyle = "rgba(253, 224, 71, .9)";
+      context.lineWidth = 2.5;
+      context.shadowColor = "#facc15";
+      context.shadowBlur = 16;
+      context.beginPath();
+      context.arc(0, 0, radius + 8, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+    }
     context.fillStyle = "rgba(15, 23, 42, .42)";
     context.beginPath();
     context.ellipse(2, radius * 0.55, radius + 6, radius * 0.7, 0, 0, Math.PI * 2);
@@ -136,6 +148,22 @@ export class EntityLayer {
     context.arc(barrelLength, 0, tower.type === "cannon" ? 6 : 3.5, 0, Math.PI * 2);
     context.fill();
     context.restore();
+    if (tower.auraBuffed) {
+      context.save();
+      context.translate(position.x, position.y - radius - 12);
+      context.fillStyle = "#facc15";
+      context.strokeStyle = "#713f12";
+      context.lineWidth = 1.5;
+      this.polygon(context, 4, 6, Math.PI / 4);
+      context.fill();
+      context.stroke();
+      context.fillStyle = "#422006";
+      context.font = "900 8px system-ui";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText("↑", 0, 1);
+      context.restore();
+    }
   }
 
   drawEnemy(context, enemy, time, reducedMotion) {
@@ -153,7 +181,7 @@ export class EntityLayer {
     context.strokeStyle = "#1e293b";
     context.lineWidth = enemy.type === "armored" ? 4 : 2;
     context.beginPath();
-    if (enemy.type === "runner") {
+    if (enemy.type === "runner" || enemy.type === "eliteRunner") {
       context.moveTo(radius, 0);
       context.lineTo(-radius * 0.75, -radius * 0.72);
       context.lineTo(-radius * 0.45, 0);
@@ -167,15 +195,21 @@ export class EntityLayer {
       this.polygon(context, 4, radius, Math.PI / 4);
     } else if (enemy.type === "splitter") {
       this.polygon(context, 4, radius, 0);
+    } else if (enemy.type === "arcaneSentinel") {
+      this.polygon(context, 6, radius, Math.PI / 6);
+    } else if (enemy.type === "stormLancer") {
+      this.polygon(context, 3, radius, 0);
     } else if (enemy.type === "boss") {
       this.polygon(context, 8, radius, reducedMotion ? 0 : time * 0.35);
+    } else if (enemy.type === "archonBoss") {
+      this.polygon(context, 10, radius, reducedMotion ? 0 : -time * 0.24);
     } else {
       context.arc(0, 0, radius, 0, Math.PI * 2);
     }
     context.fill();
     context.stroke();
 
-    if (enemy.type === "runner") {
+    if (enemy.type === "runner" || enemy.type === "eliteRunner") {
       context.strokeStyle = "#fef3c7";
       context.lineWidth = 2;
       const stride = reducedMotion ? 0 : Math.sin(time * 13 + (enemy.progress ?? 0) * 80) * 4;
@@ -209,7 +243,7 @@ export class EntityLayer {
       context.moveTo(0, -radius * 0.45);
       context.lineTo(0, radius * 0.45);
       context.stroke();
-    } else if (enemy.type === "boss") {
+    } else if (enemy.type === "boss" || enemy.type === "archonBoss") {
       context.strokeStyle = "#f5d0fe";
       context.lineWidth = 2;
       context.beginPath();
@@ -235,6 +269,16 @@ export class EntityLayer {
       context.moveTo(0, -radius * 0.65);
       context.lineTo(0, radius * 0.65);
       context.stroke();
+    }
+
+    if (enemy.elite) {
+      context.strokeStyle = "#fde68a";
+      context.lineWidth = enemy.boss ? 3 : 2;
+      context.setLineDash([4, 3]);
+      context.beginPath();
+      context.arc(0, 0, radius + 5, 0, Math.PI * 2);
+      context.stroke();
+      context.setLineDash([]);
     }
 
     context.fillStyle = "#f8fafc";

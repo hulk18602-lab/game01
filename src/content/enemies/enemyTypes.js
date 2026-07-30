@@ -39,6 +39,26 @@ export const enemyTypes = Object.freeze({
     reward: 38, baseDamage: 2, armor: 0, splitInto: "swarm", splitCount: 2,
     color: "#f0abfc", radius: 16,
   }),
+  eliteRunner: defineEnemy({
+    id: "eliteRunner", name: "Phase Strider", shortLabel: "E", elite: true,
+    health: 320, speed: 115, reward: 52, baseDamage: 3, armor: 0.1,
+    color: "#a78bfa", radius: 13,
+  }),
+  arcaneSentinel: defineEnemy({
+    id: "arcaneSentinel", name: "Arcane Sentinel", shortLabel: "S", elite: true,
+    health: 720, shield: 260, speed: 38, reward: 85, baseDamage: 5, armor: 0.3,
+    color: "#818cf8", radius: 19,
+  }),
+  stormLancer: defineEnemy({
+    id: "stormLancer", name: "Storm Lancer", shortLabel: "L", elite: true,
+    health: 420, shield: 90, speed: 70, reward: 64, baseDamage: 4, armor: 0.15,
+    color: "#22d3ee", radius: 15,
+  }),
+  archonBoss: defineEnemy({
+    id: "archonBoss", name: "Astral Archon", shortLabel: "Ω", elite: true, boss: true,
+    health: 6200, shield: 1500, speed: 25, reward: 600, baseDamage: 12, armor: 0.25,
+    color: "#e879f9", radius: 28,
+  }),
 });
 
 export default enemyTypes;
