@@ -5,5 +5,6 @@ export * from "./EnemyTooltip.js";
 export * from "./GameOverlays.js";
 export * from "./GameUi.js";
 export * from "./Hud.js";
+export * from "./HeroPanel.js";
 export * from "./SelectedTowerPanel.js";
 export * from "./StatusMessage.js";

@@ -112,6 +112,22 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
         effects: activeEffects.join(", ") || "None",
       };
     },
+    hero: (state) => {
+      const hero = state.hero;
+      if (!hero || !isGameplayPhase(session.phase)) return null;
+      const target = state.enemies.find((enemy) => enemy.id === hero.targetId);
+      return {
+        id: hero.id,
+        name: hero.name,
+        level: hero.level,
+        xp: hero.xp,
+        xpToNextLevel: hero.xpToNextLevel,
+        damage: hero.damage,
+        range: hero.range,
+        fireRate: hero.fireRate,
+        target: target?.name ?? null,
+      };
+    },
     overlay: (state): OverlayView => {
       if (session.phase === "menu") {
         return {

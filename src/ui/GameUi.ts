@@ -5,6 +5,7 @@ import { element } from "./dom.js";
 import { EnemyTooltip } from "./EnemyTooltip.js";
 import { GameOverlays } from "./GameOverlays.js";
 import { Hud } from "./Hud.js";
+import { HeroPanel } from "./HeroPanel.js";
 import { SelectedTowerPanel } from "./SelectedTowerPanel.js";
 import { StatusMessage } from "./StatusMessage.js";
 
@@ -14,6 +15,7 @@ export class GameUi<State> {
   readonly #hud: Hud;
   readonly #buildPanel: BuildPanel;
   readonly #towerPanel: SelectedTowerPanel;
+  readonly #heroPanel: HeroPanel;
   readonly #overlays: GameOverlays;
   readonly #enemyTooltip: EnemyTooltip;
   readonly #message: StatusMessage;
@@ -27,6 +29,7 @@ export class GameUi<State> {
     this.#hud = new Hud(dispatch);
     this.#buildPanel = new BuildPanel(dispatch);
     this.#towerPanel = new SelectedTowerPanel(dispatch);
+    this.#heroPanel = new HeroPanel();
     this.#overlays = new GameOverlays(dispatch);
     this.#enemyTooltip = new EnemyTooltip();
     this.#message = new StatusMessage();
@@ -34,6 +37,7 @@ export class GameUi<State> {
       this.#hud.element,
       this.#buildPanel.element,
       this.#towerPanel.element,
+      this.#heroPanel.element,
       this.#enemyTooltip.element,
       this.#message.element,
       this.#overlays.element,
@@ -58,6 +62,7 @@ export class GameUi<State> {
     this.#hud.render(view.hud, view.audio);
     this.#buildPanel.render(view.buildOptions, view.selectedBuildType, view.hud.visible);
     this.#towerPanel.render(view.selectedTower);
+    this.#heroPanel.render(view.hero);
     this.#enemyTooltip.render(view.enemyTooltip);
     this.#message.render(view.message);
     this.#overlays.render(view.overlay, view.audio);

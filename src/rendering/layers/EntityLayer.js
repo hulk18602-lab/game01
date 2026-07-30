@@ -260,7 +260,32 @@ export class EntityLayer {
     context.shadowBlur = 10;
     context.shadowColor = projectile.color ?? "#f8fafc";
     context.fillStyle = projectile.color ?? "#f8fafc";
-    if (projectile.damageType === "electric") {
+    if (projectile.projectileType === "arrow") {
+      context.rotate(projectile.rotation ?? 0);
+      context.shadowBlur = 4;
+      context.strokeStyle = projectile.color ?? "#f5d68a";
+      context.lineWidth = 2.5;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(-12, 0);
+      context.lineTo(8, 0);
+      context.stroke();
+      context.fillStyle = "#e2e8f0";
+      context.beginPath();
+      context.moveTo(10, 0);
+      context.lineTo(4, -4);
+      context.lineTo(5, 4);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = "#86efac";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(-10, 0);
+      context.lineTo(-15, -4);
+      context.moveTo(-10, 0);
+      context.lineTo(-15, 4);
+      context.stroke();
+    } else if (projectile.damageType === "electric") {
       context.strokeStyle = projectile.color ?? "#fde047";
       context.lineWidth = 3;
       context.beginPath();

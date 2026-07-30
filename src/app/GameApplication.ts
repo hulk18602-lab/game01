@@ -45,6 +45,16 @@ interface GameDebugApi {
   readonly canvasHeight: number;
   readonly reducedMotion: boolean;
   readonly activeEffects: number;
+  readonly hero: {
+    readonly id: string;
+    readonly position: { readonly x: number; readonly y: number };
+    readonly moveTarget: { readonly x: number; readonly y: number } | null;
+    readonly targetId: string | null;
+    readonly level: number;
+    readonly xp: number;
+    readonly xpToNextLevel: number;
+    readonly arrowProjectiles: readonly ProjectileEntity[];
+  } | null;
 }
 
 declare global {
@@ -62,10 +72,12 @@ export class GameApplication {
   readonly #keyboard: KeyboardInputAdapter;
   readonly #motionQuery: MediaQueryList | null;
   readonly #shortScenario: boolean;
+  readonly #heroMovementKeys = new Set<string>();
   #runtime: LevelRuntime;
   #started = false;
 
   readonly #handleResize = (): void => this.#runtime.resize();
+  readonly #handleBlur = (): void => this.#heroMovementKeys.clear();
   readonly #handleMotionChange = (event: MediaQueryListEvent): void => {
     this.#runtime.setReducedMotion(event.matches);
     this.#runtime.render();
@@ -86,7 +98,7 @@ export class GameApplication {
       ? window.matchMedia("(prefers-reduced-motion: reduce)")
       : null;
     const selectedLevel = getLevelDefinition(settings.selectedLevelId);
-    const initialLevelId = selectedLevel.number <= 2
+    const initialLevelId = selectedLevel.playable
       && settings.unlockedLevelIds.includes(settings.selectedLevelId)
       ? settings.selectedLevelId
       : "level-1";
@@ -96,17 +108,27 @@ export class GameApplication {
     this.#loop = new GameLoopAdapter({
       schedule: (callback: FrameRequestCallback) => requestAnimationFrame(callback),
       cancel: (handle: number) => cancelAnimationFrame(handle),
-      update: (delta: number) => this.#runtime.update(delta),
+      update: (delta: number) => {
+        const input = this.#heroMovementInput();
+        this.#runtime.setHeroMovementInput(input.x, input.y);
+        this.#runtime.update(delta);
+      },
       render: () => {
         this.#runtime.render();
         this.#audio.update();
       },
     });
     this.#keyboard = new KeyboardInputAdapter(window, (event) => {
+      if (this.#runtime.session.hero && this.#isHeroMovementKey(event.code)) {
+        if (event.phase === "down") this.#heroMovementKeys.add(event.code);
+        else this.#heroMovementKeys.delete(event.code);
+        return;
+      }
       if (event.phase === "down" && !event.repeat) this.#onKey(event.code);
     });
     this.#motionQuery?.addEventListener("change", this.#handleMotionChange);
     window.addEventListener("resize", this.#handleResize, { passive: true });
+    window.addEventListener("blur", this.#handleBlur);
     this.#installDebugApi();
   }
 
@@ -121,6 +143,7 @@ export class GameApplication {
     this.#loop.stop();
     this.#keyboard.destroy();
     window.removeEventListener("resize", this.#handleResize);
+    window.removeEventListener("blur", this.#handleBlur);
     this.#motionQuery?.removeEventListener("change", this.#handleMotionChange);
     this.#runtime.destroy();
     this.#audio.destroy();
@@ -145,6 +168,7 @@ export class GameApplication {
   #replaceRuntime(level: LevelDefinition): void {
     const replacement = this.#createRuntime(level);
     this.#runtime.destroy();
+    this.#heroMovementKeys.clear();
     this.#runtime = replacement;
     if (this.#started) this.#runtime.mount();
   }
@@ -165,7 +189,7 @@ export class GameApplication {
     }
     const settings = this.#storage.loadSettings();
     if (!settings.unlockedLevelIds.includes(save.levelId)
-      || getLevelDefinition(save.levelId).number > 2) {
+      || !getLevelDefinition(save.levelId).playable) {
       this.#storage.clearGame();
       throw new Error("The saved level is no longer unlocked.");
     }
@@ -242,7 +266,7 @@ export class GameApplication {
     const session = this.#runtime.session;
     const state = session.getState();
     if (code === "Escape") {
-      if (state.selectedBuildType || state.selectedTowerId) {
+      if (state.selectedBuildType || state.selectedTowerId || state.selectedHeroId) {
         this.#run(() => session.cancelAction());
       } else if (isGameplayPhase(session.phase)) {
         this.#run(() => session.togglePause());
@@ -292,6 +316,17 @@ export class GameApplication {
     this.#runtime.render();
   }
 
+  #isHeroMovementKey(code: string): boolean {
+    return code === "KeyW" || code === "KeyA" || code === "KeyS" || code === "KeyD";
+  }
+
+  #heroMovementInput(): { readonly x: number; readonly y: number } {
+    return {
+      x: Number(this.#heroMovementKeys.has("KeyD")) - Number(this.#heroMovementKeys.has("KeyA")),
+      y: Number(this.#heroMovementKeys.has("KeyS")) - Number(this.#heroMovementKeys.has("KeyW")),
+    };
+  }
+
   #installDebugApi(): void {
     if (!import.meta.env.DEV) return;
     const application = this;
@@ -316,6 +351,22 @@ export class GameApplication {
       get canvasHeight() { return application.#runtime.canvas.height; },
       get reducedMotion() { return application.#runtime.session.getState().reducedMotion; },
       get activeEffects() { return application.#runtime.session.getState().effects.length; },
+      get hero() {
+        const hero = application.#runtime.session.hero;
+        if (!hero) return null;
+        return {
+          id: hero.id,
+          position: { ...hero.position },
+          moveTarget: hero.moveTarget ? { ...hero.moveTarget } : null,
+          targetId: hero.targetId,
+          level: hero.level,
+          xp: hero.xp,
+          xpToNextLevel: hero.xpToNextLevel,
+          arrowProjectiles: application.#runtime.session.projectiles.filter(
+            (projectile) => projectile.projectileType === "arrow",
+          ),
+        };
+      },
     };
   }
 }

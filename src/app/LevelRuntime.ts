@@ -18,6 +18,7 @@ import {
   DebugLayer,
   EffectLayer,
   EntityLayer,
+  HeroLayer,
   MapLayer,
   PlacementLayer,
   Renderer,
@@ -33,6 +34,8 @@ interface RenderState {
   effects: readonly VisualEffect[];
   placementPreview: CampaignRuntime["placementPreview"];
   selectedTowerRange: { readonly position: Position; readonly range: number } | null;
+  hero: CampaignRuntime["hero"];
+  selectedHeroId: string | null;
   visualTime: number;
   reducedMotion: boolean;
   shakeOffset: { x: number; y: number };
@@ -100,10 +103,13 @@ export class LevelRuntime {
     effects: [],
     placementPreview: null,
     selectedTowerRange: null,
+    hero: null,
+    selectedHeroId: null,
     visualTime: 0,
     reducedMotion: false,
     shakeOffset: { x: 0, y: 0 },
   };
+  readonly #preventContextMenu = (event: Event): void => event.preventDefault();
   #mounted = false;
 
   constructor(options: LevelRuntimeOptions) {
@@ -150,6 +156,7 @@ export class LevelRuntime {
         new MapLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
         new PlacementLayer() as unknown as CanvasLayer,
         new EntityLayer() as unknown as CanvasLayer,
+        new HeroLayer() as unknown as CanvasLayer,
         new EffectLayer() as unknown as CanvasLayer,
         new DebugLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
       ],
@@ -167,8 +174,11 @@ export class LevelRuntime {
         this.session.updatePointer(null);
       } else if (event.phase === "down" && event.button === 0) {
         options.run(() => this.session.handleBattlefieldClick(event.position));
+      } else if (event.phase === "down" && event.button === 2) {
+        options.run(() => this.session.moveHero(event.position));
       }
     });
+    this.canvas.addEventListener("contextmenu", this.#preventContextMenu);
   }
 
   mount(): void {
@@ -182,6 +192,7 @@ export class LevelRuntime {
 
   destroy(): void {
     this.#pointer.destroy();
+    this.canvas.removeEventListener("contextmenu", this.#preventContextMenu);
     this.#unsubscribePresentation();
     this.#ui.unmount();
     this.canvas.remove();
@@ -190,6 +201,10 @@ export class LevelRuntime {
 
   update(deltaSeconds: number): void {
     this.session.update(deltaSeconds);
+  }
+
+  setHeroMovementInput(x: number, y: number): void {
+    this.session.setHeroMovementInput({ x, y });
   }
 
   setReducedMotion(reduced: boolean): void {
@@ -204,6 +219,8 @@ export class LevelRuntime {
     this.#renderState.effects = state.effects;
     this.#renderState.placementPreview = state.placementPreview;
     this.#renderState.selectedTowerRange = this.session.selectedTowerRange;
+    this.#renderState.hero = state.hero;
+    this.#renderState.selectedHeroId = state.selectedHeroId;
     const visualTime = state.reducedMotion
       ? 0
       : (performance.now() - this.#visualStartedAt) / 1000;

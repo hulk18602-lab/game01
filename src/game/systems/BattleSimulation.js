@@ -2,6 +2,7 @@ import MovementSystem from "../../systems/MovementSystem.js";
 import CleanupSystem from "./CleanupSystem.js";
 import CombatSystem from "./CombatSystem.js";
 import EnemyAbilitySystem from "./EnemyAbilitySystem.js";
+import HeroCombatSystem from "./HeroCombatSystem.js";
 import ProjectileSystem from "./ProjectileSystem.js";
 import StatusEffectSystem from "./StatusEffectSystem.js";
 import TargetingSystem from "./TargetingSystem.js";
@@ -16,13 +17,14 @@ export class BattleSimulation {
     this.createEnemy = createEnemy;
     this.targeting = new TargetingSystem();
     this.combat = new CombatSystem();
+    this.heroCombat = new HeroCombatSystem();
     this.projectiles = new ProjectileSystem();
     this.statusEffects = new StatusEffectSystem();
     this.abilities = new EnemyAbilitySystem({ createEnemy });
     this.cleanup = new CleanupSystem();
   }
 
-  update(deltaSeconds, towers, enemies) {
+  update(deltaSeconds, towers, enemies, hero = null) {
     this.statusEffects.update(deltaSeconds, enemies);
     this.abilities.update(deltaSeconds, enemies);
     const reached = this.movement.update(enemies, deltaSeconds);
@@ -32,6 +34,7 @@ export class BattleSimulation {
     });
     this.targeting.update(towers, enemies);
     this.combat.update(deltaSeconds, towers, enemies, this.projectiles);
+    this.heroCombat.update(deltaSeconds, hero, enemies, this.projectiles);
     this.projectiles.update(deltaSeconds, enemies, this.statusEffects);
     const splitChildren = this.abilities.spawnOnDeath(enemies);
     if (splitChildren.length > 0) enemies.push(...splitChildren);
@@ -49,6 +52,7 @@ export class BattleSimulation {
 
   reset() {
     this.projectiles = new ProjectileSystem();
+    this.heroCombat = new HeroCombatSystem();
     this.abilities = new EnemyAbilitySystem({ createEnemy: this.createEnemy });
   }
 }
