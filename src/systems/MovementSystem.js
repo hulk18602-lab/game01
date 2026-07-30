@@ -12,7 +12,9 @@ export class MovementSystem {
     const reachedBase = [];
     for (const enemy of enemies) {
       if (enemy.pendingRemoval || enemy.dead || enemy.reachedBase) continue;
-      const effectiveSpeed = enemy.speed * (enemy.speedMultiplier ?? 1);
+      const effectiveSpeed = enemy.speed
+        * (enemy.speedMultiplier ?? 1)
+        * (enemy.abilitySpeedMultiplier ?? 1);
       enemy.progress = Math.min(1, enemy.progress + (effectiveSpeed * deltaSeconds) / this.path.length);
       enemy.position = this.path.getPointAt(enemy.progress);
       if (enemy.progress === 1) {

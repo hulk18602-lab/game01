@@ -47,24 +47,34 @@ export class ProjectileSystem {
       const travel = projectile.speed * deltaSeconds;
       if (distance <= travel + this.hitRadius) {
         projectile.position = { ...targetPosition };
-        const healthBefore = target.health;
-        const healthAfter = applyDamage(target, projectile.damage);
-        this.events.push({
-          type: 'hit',
-          sourceId: projectile.sourceId,
-          targetId: target.id,
-          position: { ...targetPosition },
-          damage: healthBefore - healthAfter,
-        });
-        if (healthAfter === 0) {
+        const victims = projectile.areaRadius > 0
+          ? enemies.filter((enemy) =>
+            isAlive(enemy) && Math.sqrt(
+              (entityPosition(enemy).x - targetPosition.x) ** 2
+              + (entityPosition(enemy).y - targetPosition.y) ** 2,
+            ) <= projectile.areaRadius)
+          : [target];
+        for (const victim of victims) {
+          const healthBefore = victim.health;
+          const healthAfter = applyDamage(victim, projectile.damage, projectile.damageType);
           this.events.push({
-            type: 'enemy-death',
+            type: 'hit',
             sourceId: projectile.sourceId,
-            targetId: target.id,
-            position: { ...targetPosition },
+            targetId: victim.id,
+            position: { ...entityPosition(victim) },
+            damage: healthBefore - healthAfter,
+            areaRadius: projectile.areaRadius ?? 0,
           });
-        } else if (projectile.statusEffect && statusEffectSystem) {
-          statusEffectSystem.apply(target, projectile.statusEffect);
+          if (healthAfter === 0) {
+            this.events.push({
+              type: 'enemy-death',
+              sourceId: projectile.sourceId,
+              targetId: victim.id,
+              position: { ...entityPosition(victim) },
+            });
+          } else if (projectile.statusEffect && statusEffectSystem) {
+            statusEffectSystem.apply(victim, projectile.statusEffect);
+          }
         }
         projectile.spent = true;
       } else if (distance > 0) {

@@ -6,8 +6,8 @@
     "noEmit": false,
     "outDir": ".test-dist",
     "rootDir": ".",
-    "allowJs": false,
+    "allowJs": true,
     "types": []
   },
-  "include": ["src/game/**/*.ts", "test/commands.test.ts", "test/node-shims.d.ts"]
+  "include": ["src/game/**/*.ts", "test/*.test.ts", "test/node-shims.d.ts"]
 }

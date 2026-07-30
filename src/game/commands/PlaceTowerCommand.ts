@@ -30,6 +30,7 @@ export class PlaceTowerCommand implements Command<Tower> {
       ownerId: this.playerId,
       type: this.towerType,
       level: 0,
+      targeting: definition.defaultTargeting ?? "first",
       position: { ...this.position },
     };
 

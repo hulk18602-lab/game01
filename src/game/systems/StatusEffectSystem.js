@@ -17,7 +17,7 @@ export class StatusEffectSystem {
       enemy.statusEffects ??= [];
       for (const effect of enemy.statusEffects) {
         if (effect.type === 'damageOverTime') {
-          applyDamage(enemy, effect.damagePerSecond * deltaSeconds);
+          applyDamage(enemy, effect.damagePerSecond * deltaSeconds, effect.damageType ?? 'cold');
         }
         effect.remaining -= deltaSeconds;
       }

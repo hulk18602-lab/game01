@@ -22,11 +22,11 @@ export function distanceSquared(a, b) {
   return dx * dx + dy * dy;
 }
 
-export function applyDamage(enemy, amount) {
+export function applyDamage(enemy, amount, damageType = 'physical') {
   if (!enemy || typeof enemy.takeDamage !== 'function') {
     throw new TypeError('Damage targets must implement takeDamage(amount)');
   }
-  return enemy.takeDamage(amount);
+  return enemy.takeDamage(amount, damageType);
 }
 
 export function removeInPlace(items, predicate) {

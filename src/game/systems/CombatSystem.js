@@ -20,7 +20,10 @@ export class CombatSystem {
         targetId: target.id,
         position: { ...sourcePosition },
         damage: tower.damage,
+        damageType: tower.damageType,
         speed: tower.projectileSpeed,
+        areaRadius: tower.areaRadius,
+        color: tower.projectileColor ?? tower.color,
         statusEffect: tower.statusEffect,
       });
       tower.cooldown = 1 / tower.fireRate;
