@@ -4,6 +4,7 @@ const TILE_SIZE = 48;
 
 type DebugEntity = {
   readonly id: string;
+  readonly type?: string;
   readonly health?: number;
   readonly targetId?: string | null;
   readonly position?: { readonly x: number; readonly y: number };
@@ -21,6 +22,9 @@ declare global {
       readonly currentWave: number;
       readonly phase: string;
       readonly speed: number;
+      readonly levelId: string;
+      readonly mapId: string;
+      readonly pathLength: number;
       readonly worldWidth: number;
       readonly worldHeight: number;
       readonly canvasWidth: number;
@@ -44,6 +48,8 @@ async function startNormalGame(page: Page, path = "/"): Promise<void> {
   await page.goto(path);
   await expect(page.getByRole("heading", { name: "River Outpost" })).toBeVisible();
   await page.getByRole("button", { name: "New Game" }).click();
+  await expect(page.getByRole("heading", { name: "Select level" })).toBeVisible();
+  await page.getByRole("button", { name: /Play Level 1/ }).click();
   await expect(page.getByRole("heading", { name: "Choose difficulty" })).toBeVisible();
   await page.getByRole("button", { name: /Commander/ }).click();
   const tutorial = page.getByRole("heading", { name: "Defend the outpost" });

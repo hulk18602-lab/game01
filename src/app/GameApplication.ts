@@ -1,69 +1,23 @@
-import map01 from "../content/maps/map01.js";
-import testMap from "../content/maps/mapTest.js";
-import testWaves from "../content/waves/testWaveDefinitions.js";
-import { GameLoop } from "../core/GameLoop.js";
 import { AudioManager } from "../audio/AudioManager.js";
-import {
-  CampaignSession,
-  type CampaignRuntime,
-  type EnemyEntity,
-  type MapDefinition,
-  type ProjectileEntity,
-  type VisualEffect,
-  type WaveDefinition,
-} from "../game/CampaignSession.js";
+import levelDefinitions, {
+  getLevelDefinition,
+  type LevelDefinition,
+  type LevelId,
+} from "../content/levels/levelDefinitions.js";
+import { GameLoop } from "../core/GameLoop.js";
+import type { EnemyEntity, ProjectileEntity } from "../game/CampaignSession.js";
 import type { GameSpeed } from "../game/GameFlow.js";
-import type { Position, RuntimeTower } from "../game/index.js";
-import { CanvasCoordinateConverter, KeyboardInputAdapter, PointerInputAdapter } from "../input/index.js";
-import {
-  Camera,
-  DebugLayer,
-  EffectLayer,
-  EntityLayer,
-  MapLayer,
-  PlacementLayer,
-  Renderer,
-} from "../rendering/index.js";
-import {
-  GameUi,
-  type UiCommand,
-} from "../ui/index.js";
-import { createUiSelectors, isGameplayPhase } from "./createUiSelectors.js";
-
-interface RenderState {
-  runtimeTowers: readonly RuntimeTower[];
-  enemies: readonly EnemyEntity[];
-  projectiles: readonly ProjectileEntity[];
-  effects: readonly VisualEffect[];
-  placementPreview: CampaignRuntime["placementPreview"];
-  selectedTowerRange: { readonly position: Position; readonly range: number } | null;
-  visualTime: number;
-  reducedMotion: boolean;
-  shakeOffset: { x: number; y: number };
-}
-
-interface CanvasLayer {
-  render(
-    context: CanvasRenderingContext2D,
-    state: RenderState,
-    camera: InstanceType<typeof Camera>,
-  ): void;
-}
-
-interface RendererPort {
-  render(state: RenderState): void;
-}
+import { GameStorage } from "../game/persistence/GameStorage.js";
+import type { RuntimeTower } from "../game/index.js";
+import { KeyboardInputAdapter } from "../input/index.js";
+import type { UiCommand } from "../ui/index.js";
+import { isGameplayPhase } from "./createUiSelectors.js";
+import { LevelRuntime } from "./LevelRuntime.js";
 
 interface GameLoopPort {
   start(): boolean;
   stop(): boolean;
 }
-
-type RendererConstructor = new (options: {
-  readonly context: CanvasRenderingContext2D;
-  readonly camera: InstanceType<typeof Camera>;
-  readonly layers: readonly CanvasLayer[];
-}) => RendererPort;
 
 type GameLoopConstructor = new (options: {
   readonly schedule: (callback: FrameRequestCallback) => number;
@@ -71,16 +25,6 @@ type GameLoopConstructor = new (options: {
   readonly update: (delta: number) => void;
   readonly render: () => void;
 }) => GameLoopPort;
-
-type MapLayerConstructor = new (options: {
-  readonly grid: unknown;
-  readonly converter: unknown;
-}) => CanvasLayer;
-
-type DebugLayerConstructor = new (options: {
-  readonly grid: unknown;
-  readonly converter: unknown;
-}) => CanvasLayer;
 
 interface GameDebugApi {
   readonly towers: readonly RuntimeTower[];
@@ -92,6 +36,9 @@ interface GameDebugApi {
   readonly currentWave: number;
   readonly phase: string;
   readonly speed: GameSpeed;
+  readonly levelId: LevelId;
+  readonly mapId: string;
+  readonly pathLength: number;
   readonly worldWidth: number;
   readonly worldHeight: number;
   readonly canvasWidth: number;
@@ -106,224 +53,230 @@ declare global {
   }
 }
 
-/** Browser composition root: input, Canvas, scheduling and UI adapters only. */
+/** Application shell. Per-level browser dependencies live and die inside LevelRuntime. */
 export class GameApplication {
   readonly #root: HTMLElement;
-  readonly #canvas = document.createElement("canvas");
-  readonly #session: CampaignSession;
-  readonly #renderer: RendererPort;
-  readonly #loop: GameLoopPort;
-  readonly #ui: GameUi<CampaignRuntime>;
-  readonly #pointer: PointerInputAdapter;
-  readonly #keyboard: KeyboardInputAdapter;
-  readonly #screen: CanvasCoordinateConverter;
+  readonly #storage: GameStorage;
   readonly #audio: AudioManager;
-  readonly #unsubscribePresentation: () => void;
-  readonly #camera: InstanceType<typeof Camera>;
-  readonly #worldWidth: number;
-  readonly #worldHeight: number;
+  readonly #loop: GameLoopPort;
+  readonly #keyboard: KeyboardInputAdapter;
   readonly #motionQuery: MediaQueryList | null;
-  readonly #visualStartedAt = performance.now();
-  readonly #handleResize = (): void => this.#resizeCanvas();
+  readonly #shortScenario: boolean;
+  #runtime: LevelRuntime;
+  #started = false;
+
+  readonly #handleResize = (): void => this.#runtime.resize();
   readonly #handleMotionChange = (event: MediaQueryListEvent): void => {
-    this.#session.setReducedMotion(event.matches);
-    this.#render();
-  };
-  readonly #renderState: RenderState = {
-    runtimeTowers: [],
-    enemies: [],
-    projectiles: [],
-    effects: [],
-    placementPreview: null,
-    selectedTowerRange: null,
-    visualTime: 0,
-    reducedMotion: false,
-    shakeOffset: { x: 0, y: 0 },
+    this.#runtime.setReducedMotion(event.matches);
+    this.#runtime.render();
   };
 
   constructor(root: HTMLElement) {
     this.#root = root;
-    const shortScenario = import.meta.env.DEV
+    this.#storage = new GameStorage(typeof localStorage === "undefined" ? null : localStorage);
+    const settings = this.#storage.loadSettings();
+    this.#audio = new AudioManager({
+      enabled: settings.soundEnabled,
+      musicVolume: settings.musicVolume,
+      sfxVolume: settings.sfxVolume,
+    });
+    this.#shortScenario = import.meta.env.DEV
       && new URLSearchParams(window.location.search).get("scenario") === "short";
-    this.#session = new CampaignSession({
-      map: (shortScenario ? testMap : map01) as unknown as MapDefinition,
-      waves: (shortScenario ? testWaves : undefined) as unknown as readonly WaveDefinition[] | undefined,
-    });
-    this.#audio = new AudioManager(this.#session.audioSettings);
-    this.#unsubscribePresentation = this.#session.subscribePresentation(
-      (cue) => this.#audio.play(cue),
-    );
+    this.#motionQuery = typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
+    const selectedLevel = getLevelDefinition(settings.selectedLevelId);
+    const initialLevelId = selectedLevel.number <= 2
+      && settings.unlockedLevelIds.includes(settings.selectedLevelId)
+      ? settings.selectedLevelId
+      : "level-1";
+    this.#runtime = this.#createRuntime(getLevelDefinition(initialLevelId));
 
-    const worldWidth = this.#session.map.width * this.#session.map.tileSize;
-    const worldHeight = this.#session.map.height * this.#session.map.tileSize;
-    this.#worldWidth = worldWidth;
-    this.#worldHeight = worldHeight;
-    this.#canvas.className = "game-canvas";
-    this.#canvas.width = worldWidth;
-    this.#canvas.height = worldHeight;
-    this.#canvas.style.aspectRatio = `${worldWidth} / ${worldHeight}`;
-    this.#canvas.setAttribute("aria-label", "Tower Defense battlefield");
-    const context = this.#canvas.getContext("2d");
-    if (!context) throw new Error("Canvas 2D is not supported");
-
-    this.#camera = new Camera({
-      viewportWidth: worldWidth,
-      viewportHeight: worldHeight,
-    });
-    const RendererAdapter = Renderer as unknown as RendererConstructor;
-    const MapLayerAdapter = MapLayer as unknown as MapLayerConstructor;
-    const DebugLayerAdapter = DebugLayer as unknown as DebugLayerConstructor;
-    this.#renderer = new RendererAdapter({
-      context,
-      camera: this.#camera,
-      layers: [
-        new MapLayerAdapter({ grid: this.#session.grid, converter: this.#session.converter }),
-        new PlacementLayer() as unknown as CanvasLayer,
-        new EntityLayer() as unknown as CanvasLayer,
-        new EffectLayer() as unknown as CanvasLayer,
-        new DebugLayerAdapter({ grid: this.#session.grid, converter: this.#session.converter }),
-      ],
-    });
     const GameLoopAdapter = GameLoop as unknown as GameLoopConstructor;
     this.#loop = new GameLoopAdapter({
       schedule: (callback: FrameRequestCallback) => requestAnimationFrame(callback),
       cancel: (handle: number) => cancelAnimationFrame(handle),
-      update: (delta: number) => this.#session.update(delta),
-      render: () => this.#render(),
-    });
-    this.#ui = new GameUi(
-      this.#session,
-      createUiSelectors(this.#session),
-      (command) => this.#dispatch(command),
-    );
-    this.#screen = new CanvasCoordinateConverter(this.#canvas, worldWidth, worldHeight);
-    this.#pointer = new PointerInputAdapter(this.#canvas, this.#screen, (event) => {
-      if (event.phase === "move") {
-        this.#session.updatePointer(event.position);
-      } else if (event.phase === "cancel") {
-        this.#session.updatePointer(null);
-      } else if (event.phase === "down" && event.button === 0) {
-        this.#run(() => this.#session.handleBattlefieldClick(event.position));
-      }
+      update: (delta: number) => this.#runtime.update(delta),
+      render: () => {
+        this.#runtime.render();
+        this.#audio.update();
+      },
     });
     this.#keyboard = new KeyboardInputAdapter(window, (event) => {
       if (event.phase === "down" && !event.repeat) this.#onKey(event.code);
     });
-    this.#motionQuery = typeof window.matchMedia === "function"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)")
-      : null;
-    this.#session.setReducedMotion(this.#motionQuery?.matches ?? false);
     this.#motionQuery?.addEventListener("change", this.#handleMotionChange);
     window.addEventListener("resize", this.#handleResize, { passive: true });
     this.#installDebugApi();
   }
 
   start(): void {
-    this.#root.replaceChildren(this.#canvas);
-    this.#ui.mount(this.#root);
-    this.#resizeCanvas();
-    this.#render();
+    if (this.#started) return;
+    this.#started = true;
+    this.#runtime.mount();
     this.#loop.start();
   }
 
   destroy(): void {
     this.#loop.stop();
-    this.#pointer.destroy();
     this.#keyboard.destroy();
     window.removeEventListener("resize", this.#handleResize);
     this.#motionQuery?.removeEventListener("change", this.#handleMotionChange);
-    this.#unsubscribePresentation();
+    this.#runtime.destroy();
     this.#audio.destroy();
     if (import.meta.env.DEV) delete window.__GAME_DEBUG__;
-    this.#ui.unmount();
+    this.#started = false;
+  }
+
+  #createRuntime(level: LevelDefinition): LevelRuntime {
+    return new LevelRuntime({
+      root: this.#root,
+      level,
+      levels: levelDefinitions,
+      storage: this.#storage,
+      audio: this.#audio,
+      shortScenario: this.#shortScenario,
+      reducedMotion: this.#motionQuery?.matches ?? false,
+      dispatch: (command) => this.#dispatch(command),
+      run: (action) => this.#run(action),
+    });
+  }
+
+  #replaceRuntime(level: LevelDefinition): void {
+    const replacement = this.#createRuntime(level);
+    this.#runtime.destroy();
+    this.#runtime = replacement;
+    if (this.#started) this.#runtime.mount();
+  }
+
+  #selectLevel(levelId: LevelId): void {
+    if (!this.#runtime.session.isLevelUnlocked(levelId)) {
+      throw new Error("Complete the previous level to unlock this campaign chapter.");
+    }
+    this.#replaceRuntime(getLevelDefinition(levelId));
+    this.#runtime.session.openDifficulty();
+  }
+
+  #continueGame(): void {
+    const save = this.#storage.loadGame();
+    if (!save) {
+      this.#runtime.session.continueGame();
+      return;
+    }
+    const settings = this.#storage.loadSettings();
+    if (!settings.unlockedLevelIds.includes(save.levelId)
+      || getLevelDefinition(save.levelId).number > 2) {
+      this.#storage.clearGame();
+      throw new Error("The saved level is no longer unlocked.");
+    }
+    if (this.#runtime.session.levelId !== save.levelId) {
+      this.#replaceRuntime(getLevelDefinition(save.levelId));
+    }
+    this.#runtime.session.continueGame();
   }
 
   #dispatch(command: UiCommand): void {
     this.#run(() => {
+      const session = this.#runtime.session;
       switch (command.type) {
+        case "open-level-select":
+          session.openLevelSelect();
+          break;
+        case "select-level":
+        case "next-level":
+          this.#selectLevel(command.levelId);
+          break;
         case "open-difficulty":
-          this.#session.openDifficulty();
+          session.openDifficulty();
           break;
         case "new-game":
-          this.#session.newGame(command.difficulty);
+          session.newGame(command.difficulty);
           break;
         case "continue-game":
-          this.#session.continueGame();
+          this.#continueGame();
           break;
         case "complete-tutorial":
-          this.#session.completeTutorial();
+          session.completeTutorial();
           break;
         case "start-wave":
-          this.#session.startWave(true);
+          session.startWave(true);
           break;
         case "select-build":
-          this.#session.selectBuild(command.towerType);
+          session.selectBuild(command.towerType);
           break;
         case "cancel-build":
-          this.#session.cancelAction();
+          session.cancelAction();
           break;
         case "upgrade-tower":
-          this.#session.upgradeTower(command.towerId);
+          session.upgradeTower(command.towerId);
           break;
         case "sell-tower":
-          this.#session.sellTower(command.towerId);
+          session.sellTower(command.towerId);
           break;
         case "set-targeting":
-          this.#session.setTargeting(command.towerId, command.mode);
+          session.setTargeting(command.towerId, command.mode);
           break;
         case "toggle-pause":
-          this.#session.togglePause();
+          session.togglePause();
           break;
         case "set-speed":
-          this.#session.setSpeed(command.speed);
+          session.setSpeed(command.speed);
           break;
         case "set-audio":
-          this.#session.setAudioSettings(command);
+          session.setAudioSettings(command);
           break;
         case "restart-game":
-          this.#session.restart();
+          session.restart();
+          break;
+        case "return-level-select":
+          session.returnToLevelSelect();
           break;
         case "return-menu":
-          this.#session.returnToMenu();
+          session.returnToMenu();
           break;
       }
     });
   }
 
   #onKey(code: string): void {
-    const state = this.#session.getState();
+    const session = this.#runtime.session;
+    const state = session.getState();
     if (code === "Escape") {
       if (state.selectedBuildType || state.selectedTowerId) {
-        this.#run(() => this.#session.cancelAction());
-      } else if (isGameplayPhase(this.#session.phase)) {
-        this.#run(() => this.#session.togglePause());
-      } else if (this.#session.phase === "difficulty" || this.#session.phase === "tutorial") {
-        this.#session.returnToMenu();
+        this.#run(() => session.cancelAction());
+      } else if (isGameplayPhase(session.phase)) {
+        this.#run(() => session.togglePause());
+      } else if (
+        session.phase === "level-select"
+        || session.phase === "difficulty"
+        || session.phase === "tutorial"
+      ) {
+        this.#run(() => session.returnToMenu());
       }
       return;
     }
     if (code === "KeyP") {
-      this.#run(() => this.#session.togglePause());
+      this.#run(() => session.togglePause());
       return;
     }
     if (code === "Space") {
-      if (this.#session.canStartWave) this.#run(() => this.#session.startWave(true));
+      if (session.canStartWave) this.#run(() => session.startWave(true));
       return;
     }
-    const tower = this.#session.towerOptions.find((option) => `Digit${option.hotkey}` === code);
+    const tower = session.towerOptions.find((option) => `Digit${option.hotkey}` === code);
     if (tower) {
-      this.#run(() => this.#session.selectBuild(tower.id));
+      this.#run(() => session.selectBuild(tower.id));
       return;
     }
     if (code === "KeyU" && state.selectedTowerId) {
-      this.#run(() => this.#session.upgradeTower(state.selectedTowerId!));
+      this.#run(() => session.upgradeTower(state.selectedTowerId!));
     } else if ((code === "Delete" || code === "KeyS") && state.selectedTowerId) {
-      this.#run(() => this.#session.sellTower(state.selectedTowerId!));
+      this.#run(() => session.sellTower(state.selectedTowerId!));
     } else if (code === "KeyT" && state.selectedTowerId) {
-      this.#run(() => this.#session.cycleSelectedTargeting());
+      this.#run(() => session.cycleSelectedTargeting());
     } else if (code === "Digit0") {
-      const next = (this.#session.speed % 3 + 1) as GameSpeed;
-      this.#session.setSpeed(next);
+      const next = (session.speed % 3 + 1) as GameSpeed;
+      this.#run(() => session.setSpeed(next));
     }
   }
 
@@ -332,81 +285,39 @@ export class GameApplication {
     try {
       action();
     } catch (error) {
-      this.#session.reportError(error);
+      this.#runtime.session.reportError(error);
     }
-    this.#audio.applySettings(this.#session.audioSettings);
+    this.#audio.applySettings(this.#runtime.session.audioSettings);
     void this.#audio.unlock();
-    this.#render();
-  }
-
-  #render(): void {
-    const state = this.#session.getState();
-    this.#renderState.runtimeTowers = state.runtimeTowers;
-    this.#renderState.enemies = state.enemies;
-    this.#renderState.projectiles = this.#session.projectiles;
-    this.#renderState.effects = state.effects;
-    this.#renderState.placementPreview = state.placementPreview;
-    this.#renderState.selectedTowerRange = this.#session.selectedTowerRange;
-    const visualTime = state.reducedMotion
-      ? 0
-      : (performance.now() - this.#visualStartedAt) / 1000;
-    this.#renderState.visualTime = visualTime;
-    this.#renderState.reducedMotion = state.reducedMotion;
-    const shake = state.reducedMotion ? 0 : state.screenShake;
-    this.#renderState.shakeOffset.x = shake === 0 ? 0 : Math.sin(visualTime * 47) * shake;
-    this.#renderState.shakeOffset.y = shake === 0 ? 0 : Math.cos(visualTime * 39) * shake * 0.72;
-    this.#renderer.render(this.#renderState);
-    this.#audio.update();
-  }
-
-  #resizeCanvas(): void {
-    const availableWidth = Math.max(1, window.innerWidth - 24);
-    const availableHeight = Math.max(1, window.innerHeight - 24);
-    const cssScale = Math.min(
-      1,
-      availableWidth / this.#worldWidth,
-      availableHeight / this.#worldHeight,
-    );
-    const cssWidth = Math.max(1, Math.round(this.#worldWidth * cssScale));
-    const cssHeight = Math.max(1, Math.round(this.#worldHeight * cssScale));
-    const pixelRatio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-    const backingWidth = Math.max(1, Math.round(cssWidth * pixelRatio));
-    const backingHeight = Math.max(1, Math.round(cssHeight * pixelRatio));
-
-    this.#canvas.style.width = `${cssWidth}px`;
-    this.#canvas.style.height = `${cssHeight}px`;
-    if (this.#canvas.width !== backingWidth) this.#canvas.width = backingWidth;
-    if (this.#canvas.height !== backingHeight) this.#canvas.height = backingHeight;
-    this.#camera.viewportWidth = backingWidth;
-    this.#camera.viewportHeight = backingHeight;
-    this.#camera.zoom = Math.min(
-      backingWidth / this.#worldWidth,
-      backingHeight / this.#worldHeight,
-    );
+    this.#runtime.render();
   }
 
   #installDebugApi(): void {
     if (!import.meta.env.DEV) return;
-    const session = this.#session;
-    const canvas = this.#canvas;
-    const worldWidth = this.#worldWidth;
-    const worldHeight = this.#worldHeight;
+    const application = this;
     window.__GAME_DEBUG__ = {
-      get towers() { return session.getState().runtimeTowers; },
-      get enemies() { return session.getState().enemies; },
-      get projectiles() { return session.projectiles; },
-      get lives() { return session.getState().lives; },
-      get gold() { return session.getState().players.get("player")!.balance; },
-      get score() { return session.getState().score; },
-      get currentWave() { return session.currentWaveNumber; },
-      get phase() { return session.phase; },
-      get speed() { return session.speed; },
-      get worldWidth() { return worldWidth; },
-      get worldHeight() { return worldHeight; },
-      get canvasWidth() { return canvas.width; },
-      get canvasHeight() { return canvas.height; },
-      get reducedMotion() { return session.getState().reducedMotion; },
-      get activeEffects() { return session.getState().effects.length; },
+      get towers() { return application.#runtime.session.getState().runtimeTowers; },
+      get enemies() { return application.#runtime.session.getState().enemies; },
+      get projectiles() { return application.#runtime.session.projectiles; },
+      get lives() { return application.#runtime.session.getState().lives; },
+      get gold() {
+        return application.#runtime.session.getState().players.get("player")!.balance;
+      },
+      get score() { return application.#runtime.session.getState().score; },
+      get currentWave() { return application.#runtime.session.currentWaveNumber; },
+      get phase() { return application.#runtime.session.phase; },
+      get speed() { return application.#runtime.session.speed; },
+      get levelId() { return application.#runtime.session.levelId; },
+      get mapId() { return application.#runtime.session.map.id; },
+      get pathLength() { return application.#runtime.session.path.length; },
+      get worldWidth() { return application.#runtime.worldWidth; },
+      get worldHeight() { return application.#runtime.worldHeight; },
+      get canvasWidth() { return application.#runtime.canvas.width; },
+      get canvasHeight() { return application.#runtime.canvas.height; },
+      get reducedMotion() { return application.#runtime.session.getState().reducedMotion; },
+      get activeEffects() { return application.#runtime.session.getState().effects.length; },
     };
   }
 }
+
+export default GameApplication;

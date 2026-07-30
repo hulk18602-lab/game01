@@ -14,6 +14,7 @@ async function attachScreenshot(page: Page, testInfo: TestInfo, name: string): P
 async function startGame(page: Page): Promise<void> {
   await page.goto("/");
   await page.getByRole("button", { name: "New Game" }).click();
+  await page.getByRole("button", { name: /Play Level 1/ }).click();
   await page.getByRole("button", { name: /Commander/ }).click();
   const tutorial = page.getByRole("heading", { name: "Defend the outpost" });
   if (await tutorial.isVisible()) {

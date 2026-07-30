@@ -15,6 +15,12 @@ export class Enemy {
     this.radius = definition.radius ?? 12;
     this.maxHealth = overrides.health ?? definition.health;
     this.health = Math.min(this.maxHealth, overrides.currentHealth ?? this.maxHealth);
+    this.maxShield = overrides.maxShield ?? definition.shield ?? 0;
+    this.shield = Math.min(this.maxShield, overrides.shield ?? this.maxShield);
+    this.splitInto = overrides.splitInto ?? definition.splitInto ?? null;
+    this.splitCount = overrides.splitCount ?? definition.splitCount ?? 0;
+    this.splitGeneration = overrides.splitGeneration ?? 0;
+    this.splitProcessed = false;
     this.speed = overrides.speed ?? definition.speed;
     this.reward = overrides.reward ?? definition.reward;
     this.baseDamage = overrides.baseDamage ?? definition.baseDamage;
@@ -36,12 +42,19 @@ export class Enemy {
   takeDamage(amount, damageType = 'true') {
     if (!Number.isFinite(amount) || amount < 0) throw new RangeError('Damage must be a non-negative number');
     if (!this.isAlive) return this.health;
+    let remaining = amount;
+    if (this.shield > 0) {
+      const absorbed = Math.min(this.shield, remaining);
+      this.shield -= absorbed;
+      remaining -= absorbed;
+      if (remaining <= 0) return this.health;
+    }
     const armorEffect = damageType === 'physical'
       ? this.armor
       : damageType === 'explosive'
         ? this.armor * 0.35
         : 0;
-    const applied = amount * Math.max(0, 1 - armorEffect);
+    const applied = remaining * Math.max(0, 1 - armorEffect);
     this.health = Math.max(0, this.health - applied);
     if (this.health === 0) {
       this.dead = true;

@@ -81,6 +81,23 @@ export class EntityLayer {
       context.rotate(Math.PI / 4);
       context.fillRect(-radius * 0.72, -radius * 0.72, radius * 1.44, radius * 1.44);
       context.rotate(-Math.PI / 4);
+    } else if (tower.type === "tesla") {
+      this.polygon(context, 3, radius, -Math.PI / 2);
+      context.fill();
+      context.strokeStyle = "#fef9c3";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(0, 0, radius * 0.48, 0, Math.PI * 2);
+      context.stroke();
+    } else if (tower.type === "poison") {
+      context.beginPath();
+      context.ellipse(0, 1, radius * 0.78, radius, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#bbf7d0";
+      context.beginPath();
+      context.arc(-5, -5, 3, 0, Math.PI * 2);
+      context.arc(5, 2, 2.5, 0, Math.PI * 2);
+      context.fill();
     } else {
       context.beginPath();
       context.arc(0, 0, radius * 0.8, 0, Math.PI * 2);
@@ -146,6 +163,10 @@ export class EntityLayer {
       this.polygon(context, 6, radius, Math.PI / 6);
     } else if (enemy.type === "armored") {
       this.polygon(context, 6, radius, 0);
+    } else if (enemy.type === "shielded") {
+      this.polygon(context, 4, radius, Math.PI / 4);
+    } else if (enemy.type === "splitter") {
+      this.polygon(context, 4, radius, 0);
     } else if (enemy.type === "boss") {
       this.polygon(context, 8, radius, reducedMotion ? 0 : time * 0.35);
     } else {
@@ -194,6 +215,26 @@ export class EntityLayer {
       context.beginPath();
       context.arc(0, 0, radius * 0.64, 0, Math.PI * 2);
       context.stroke();
+    } else if (enemy.type === "swarm") {
+      context.strokeStyle = "#fff1f2";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.ellipse(-radius * 0.75, 0, radius * 0.55, radius * 0.3, -0.4, 0, Math.PI * 2);
+      context.ellipse(radius * 0.75, 0, radius * 0.55, radius * 0.3, 0.4, 0, Math.PI * 2);
+      context.stroke();
+    } else if (enemy.type === "shielded") {
+      context.strokeStyle = "#bae6fd";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(0, 0, radius + 3, Math.PI * 0.15, Math.PI * 1.85);
+      context.stroke();
+    } else if (enemy.type === "splitter") {
+      context.strokeStyle = "#fae8ff";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(0, -radius * 0.65);
+      context.lineTo(0, radius * 0.65);
+      context.stroke();
     }
 
     context.fillStyle = "#f8fafc";
@@ -219,7 +260,24 @@ export class EntityLayer {
     context.shadowBlur = 10;
     context.shadowColor = projectile.color ?? "#f8fafc";
     context.fillStyle = projectile.color ?? "#f8fafc";
-    if (projectile.damageType === "cold") {
+    if (projectile.damageType === "electric") {
+      context.strokeStyle = projectile.color ?? "#fde047";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(-10, -2);
+      context.lineTo(-3, 3);
+      context.lineTo(1, -4);
+      context.lineTo(8, 1);
+      context.stroke();
+    } else if (projectile.damageType === "poison") {
+      context.beginPath();
+      context.arc(0, 0, 5, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#dcfce7";
+      context.beginPath();
+      context.arc(-2, -2, 1.5, 0, Math.PI * 2);
+      context.fill();
+    } else if (projectile.damageType === "cold") {
       context.rotate(time * 5);
       context.beginPath();
       context.moveTo(0, -7);
@@ -262,6 +320,13 @@ export class EntityLayer {
     context.fillRect(x - 1, y - 1, width + 2, height + 2);
     context.fillStyle = ratio > 0.6 ? "#22c55e" : ratio > 0.3 ? "#eab308" : "#ef4444";
     context.fillRect(x, y, width * ratio, height);
+    if ((enemy.maxShield ?? 0) > 0 && enemy.shield > 0) {
+      const shieldRatio = Math.max(0, Math.min(1, enemy.shield / enemy.maxShield));
+      context.fillStyle = "rgba(15, 23, 42, .9)";
+      context.fillRect(x - 1, y - 6, width + 2, 4);
+      context.fillStyle = "#38bdf8";
+      context.fillRect(x, y - 5, width * shieldRatio, 2);
+    }
   }
 
   polygon(context, sides, radius, rotation) {

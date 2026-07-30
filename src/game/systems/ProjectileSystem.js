@@ -11,6 +11,9 @@ const createProjectile = () => ({
   damageType: 'physical',
   speed: 0,
   areaRadius: 0,
+  chainCount: 1,
+  chainFalloff: 1,
+  chainRange: 0,
   color: '#f8fafc',
   statusEffect: null,
   spent: true,
@@ -39,6 +42,9 @@ export class ProjectileSystem {
     created.damageType = projectile.damageType ?? 'physical';
     created.speed = projectile.speed;
     created.areaRadius = projectile.areaRadius ?? 0;
+    created.chainCount = projectile.chainCount ?? 1;
+    created.chainFalloff = projectile.chainFalloff ?? 1;
+    created.chainRange = projectile.chainRange ?? 0;
     created.color = projectile.color ?? '#f8fafc';
     created.statusEffect = projectile.statusEffect ?? null;
     created.spent = false;
@@ -86,6 +92,9 @@ export class ProjectileSystem {
           }
         } else {
           this.applyHit(projectile, target, statusEffectSystem);
+          if (projectile.chainCount > 1 && projectile.chainRange > 0) {
+            this.applyChain(projectile, target, enemies, statusEffectSystem);
+          }
         }
         projectile.spent = true;
       } else if (distance > 0) {
@@ -106,15 +115,49 @@ export class ProjectileSystem {
   }
 
   applyHit(projectile, victim, statusEffectSystem) {
+    this.applyDamageHit(projectile, victim, statusEffectSystem, projectile.damage);
+  }
+
+  applyChain(projectile, firstVictim, enemies, statusEffectSystem) {
+    const visited = [firstVictim.id];
+    let origin = firstVictim;
+    let damage = projectile.damage;
+    const rangeSquared = projectile.chainRange ** 2;
+    for (let bounce = 1; bounce < projectile.chainCount; bounce += 1) {
+      let next = null;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      const originPosition = entityPosition(origin);
+      for (const enemy of enemies) {
+        if (!isAlive(enemy) || visited.includes(enemy.id)) continue;
+        const position = entityPosition(enemy);
+        const dx = position.x - originPosition.x;
+        const dy = position.y - originPosition.y;
+        const distance = dx * dx + dy * dy;
+        if (distance <= rangeSquared && distance < nearestDistance) {
+          next = enemy;
+          nearestDistance = distance;
+        }
+      }
+      if (!next) break;
+      damage *= projectile.chainFalloff;
+      this.applyDamageHit(projectile, next, statusEffectSystem, damage);
+      visited.push(next.id);
+      origin = next;
+    }
+  }
+
+  applyDamageHit(projectile, victim, statusEffectSystem, damage) {
     const healthBefore = victim.health;
-    const healthAfter = applyDamage(victim, projectile.damage, projectile.damageType);
+    const shieldBefore = victim.shield ?? 0;
+    const healthAfter = applyDamage(victim, damage, projectile.damageType);
+    const shieldAfter = victim.shield ?? 0;
     const position = entityPosition(victim);
     this.events.push({
       type: 'hit',
       sourceId: projectile.sourceId,
       targetId: victim.id,
       position: { x: position.x, y: position.y },
-      damage: healthBefore - healthAfter,
+      damage: healthBefore + shieldBefore - healthAfter - shieldAfter,
       damageType: projectile.damageType,
       areaRadius: projectile.areaRadius,
     });

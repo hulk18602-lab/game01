@@ -26,6 +26,19 @@ export const enemyTypes = Object.freeze({
     id: "boss", name: "River Colossus", shortLabel: "B", health: 1800, speed: 28,
     reward: 180, baseDamage: 8, armor: 0.2, boss: true, color: "#c084fc", radius: 23,
   }),
+  swarm: defineEnemy({
+    id: "swarm", name: "Swarm", shortLabel: "S", health: 35, speed: 88,
+    reward: 5, baseDamage: 1, armor: 0, color: "#fda4af", radius: 7,
+  }),
+  shielded: defineEnemy({
+    id: "shielded", name: "Shielded", shortLabel: "D", health: 220, shield: 120, speed: 44,
+    reward: 32, baseDamage: 2, armor: 0.1, color: "#38bdf8", radius: 15,
+  }),
+  splitter: defineEnemy({
+    id: "splitter", name: "Splitter", shortLabel: "2", health: 260, speed: 46,
+    reward: 38, baseDamage: 2, armor: 0, splitInto: "swarm", splitCount: 2,
+    color: "#f0abfc", radius: 16,
+  }),
 });
 
 export default enemyTypes;

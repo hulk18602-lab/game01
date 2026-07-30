@@ -28,6 +28,9 @@ export class CombatSystem {
         damageType: tower.damageType,
         speed: tower.projectileSpeed,
         areaRadius: tower.areaRadius,
+        chainCount: tower.chainCount,
+        chainFalloff: tower.chainFalloff,
+        chainRange: tower.chainRange,
         color: tower.projectileColor ?? tower.color,
         statusEffect: tower.statusEffect,
       });

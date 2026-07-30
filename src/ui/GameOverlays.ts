@@ -2,6 +2,7 @@ import type {
   CommandDispatcher,
   DifficultyOptionView,
   AudioSettingsView,
+  LevelOptionView,
   OverlayView,
 } from "./contracts.js";
 import { AudioControls } from "./AudioControls.js";
@@ -20,22 +21,36 @@ export class GameOverlays {
   readonly #tutorial: HTMLButtonElement;
   readonly #continue: HTMLButtonElement;
   readonly #playAgain: HTMLButtonElement;
+  readonly #nextLevel: HTMLButtonElement;
+  readonly #levelSelect: HTMLButtonElement;
   readonly #menu: HTMLButtonElement;
   readonly #difficultyButtons = new Map<string, HTMLButtonElement>();
+  readonly #levelButtons = new Map<string, HTMLButtonElement>();
   readonly #audio: AudioControls;
+  #nextLevelId: LevelOptionView["id"] | null = null;
   #signature = "";
 
   constructor(dispatch: CommandDispatcher) {
     this.#dispatch = dispatch;
     this.element.setAttribute("role", "dialog");
     this.element.setAttribute("aria-modal", "true");
-    this.#newGame = button("New Game", () => this.#dispatch({ type: "open-difficulty" }));
+    this.#newGame = button("New Game", () => this.#dispatch({ type: "open-level-select" }));
     this.#newGame.classList.add("game-ui__button--hero");
     this.#resumeSave = button("Resume saved defense", () => this.#dispatch({ type: "continue-game" }));
     this.#tutorial = button("Begin defense", () => this.#dispatch({ type: "complete-tutorial" }));
     this.#tutorial.classList.add("game-ui__button--hero");
     this.#continue = button("Continue", () => this.#dispatch({ type: "toggle-pause" }));
-    this.#playAgain = button("Play again", () => this.#dispatch({ type: "restart-game" }));
+    this.#playAgain = button("Replay", () => this.#dispatch({ type: "restart-game" }));
+    this.#playAgain.setAttribute("aria-label", "Play again");
+    this.#nextLevel = button("Next level", () => {
+      if (this.#nextLevelId) {
+        this.#dispatch({ type: "next-level", levelId: this.#nextLevelId });
+      }
+    });
+    this.#levelSelect = button(
+      "Level select",
+      () => this.#dispatch({ type: "return-level-select" }),
+    );
     this.#menu = button("Main menu", () => this.#dispatch({ type: "return-menu" }));
     this.#audio = new AudioControls(dispatch);
     this.#controls.append(
@@ -44,6 +59,8 @@ export class GameOverlays {
       this.#tutorial,
       this.#continue,
       this.#playAgain,
+      this.#nextLevel,
+      this.#levelSelect,
       this.#menu,
     );
     const panel = element("section", "game-ui__overlay-panel");
@@ -60,7 +77,14 @@ export class GameOverlays {
         signature += `|${option.id}:${option.startingGold}:${option.lives}`;
       }
     }
-    if (view.kind === "victory") signature += `|${view.score}|${view.bestScore}`;
+    if (view.kind === "level-select") {
+      for (const option of view.options) {
+        signature += `|${option.id}:${option.unlocked}:${option.completed}:${option.bestScore}:${option.bestDifficulty}`;
+      }
+    }
+    if (view.kind === "victory") {
+      signature += `|${view.score}|${view.bestScore}|${view.levelName}|${view.totalWaves}|${view.nextLevelId}`;
+    }
     if (view.kind === "defeat") signature += `|${view.wave}|${view.score}`;
     if (signature === this.#signature) return;
     this.#signature = signature;
@@ -73,7 +97,7 @@ export class GameOverlays {
 
     if (view.kind === "menu") {
       this.#title.textContent = "River Outpost";
-      this.#detail.textContent = "A compact twelve-wave fantasy tower defense campaign.";
+      this.#detail.textContent = "A colorful multi-level fantasy tower defense campaign.";
       this.#newGame.hidden = false;
       this.#resumeSave.hidden = false;
       this.#resumeSave.disabled = !view.continueAvailable;
@@ -82,10 +106,19 @@ export class GameOverlays {
       return;
     }
 
+    if (view.kind === "level-select") {
+      this.#title.textContent = "Select level";
+      this.#detail.textContent = "Complete campaign chapters to unlock the next battlefield.";
+      for (const option of view.options) this.#levelControl(option).hidden = false;
+      this.#menu.hidden = false;
+      return;
+    }
+
     if (view.kind === "difficulty") {
       this.#title.textContent = "Choose difficulty";
       this.#detail.textContent = "Starting resources and enemy strength change; tower balance stays consistent.";
       for (const option of view.options) this.#difficultyControl(option).hidden = false;
+      this.#levelSelect.hidden = false;
       this.#menu.hidden = false;
       return;
     }
@@ -93,12 +126,13 @@ export class GameOverlays {
     if (view.kind === "tutorial") {
       this.#title.textContent = "Defend the outpost";
       this.#detail.textContent = [
-        "1. Select a tower card or press 1–5, then place it on grass.",
+        "1. Select a tower card or press its number key, then place it on grass.",
         "2. Press Space to launch a wave early and earn bonus Gold.",
         "3. Select towers to upgrade, sell, or change targeting.",
         "P pauses; U upgrades; T cycles targeting; Esc cancels.",
       ].join("\n");
       this.#tutorial.hidden = false;
+      this.#levelSelect.hidden = false;
       this.#menu.hidden = false;
       return;
     }
@@ -115,14 +149,43 @@ export class GameOverlays {
     const won = view.kind === "victory";
     this.#title.textContent = won ? "Victory" : "Defeat";
     this.#detail.textContent = won
-      ? `All twelve waves defeated. Final score: ${view.score}.`
+      ? `${view.levelName}: all ${view.totalWaves} waves defeated. Final score: ${view.score}.`
       : `The outpost fell on wave ${view.wave}. Score: ${view.score}.`;
     if (won) {
       this.#best.textContent = `Best score: ${view.bestScore}`;
       this.#best.hidden = false;
     }
     this.#playAgain.hidden = false;
+    this.#levelSelect.hidden = false;
+    if (won && view.nextLevelId) {
+      this.#nextLevelId = view.nextLevelId;
+      this.#nextLevel.hidden = false;
+    }
     this.#menu.hidden = false;
+  }
+
+  #levelControl(option: LevelOptionView): HTMLButtonElement {
+    let control = this.#levelButtons.get(option.id);
+    if (!control) {
+      control = button("", () => this.#dispatch({ type: "select-level", levelId: option.id }));
+      control.classList.add("game-ui__level-card");
+      this.#levelButtons.set(option.id, control);
+      this.#controls.insertBefore(control, this.#tutorial);
+    }
+    const progress = option.completed ? "Completed" : "Not completed";
+    const difficulty = option.bestDifficulty ? ` · Best difficulty ${option.bestDifficulty}` : "";
+    control.textContent = option.unlocked
+      ? `Play Level ${option.number} — ${option.name} · Best ${option.bestScore} · ${progress}${difficulty}`
+      : `Level ${option.number} — ${option.name} · Locked`;
+    control.disabled = !option.unlocked;
+    control.title = option.description;
+    control.setAttribute(
+      "aria-label",
+      option.unlocked
+        ? `Play Level ${option.number} — ${option.name}`
+        : `Level ${option.number} — ${option.name} locked`,
+    );
+    return control;
   }
 
   #difficultyControl(option: DifficultyOptionView): HTMLButtonElement {
@@ -144,7 +207,11 @@ export class GameOverlays {
     this.#tutorial.hidden = true;
     this.#continue.hidden = true;
     this.#playAgain.hidden = true;
+    this.#nextLevel.hidden = true;
+    this.#levelSelect.hidden = true;
     this.#menu.hidden = true;
+    this.#nextLevelId = null;
     for (const control of this.#difficultyButtons.values()) control.hidden = true;
+    for (const control of this.#levelButtons.values()) control.hidden = true;
   }
 }
