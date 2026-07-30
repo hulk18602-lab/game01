@@ -25,6 +25,7 @@ export interface GameSettings {
   readonly completedLevelIds: readonly LevelId[];
   readonly bestScoreByLevel: Readonly<Partial<Record<LevelId, number>>>;
   readonly bestDifficultyByLevel: Readonly<Partial<Record<LevelId, DifficultyId>>>;
+  readonly heroLevel: number;
 }
 
 export interface SavedTower {
@@ -54,6 +55,14 @@ export interface SavedWave {
   readonly queue: readonly { readonly at: number; readonly type: string }[];
 }
 
+export interface SavedHero {
+  readonly id: string;
+  readonly position: Position;
+  readonly moveTarget: Position | null;
+  readonly level: number;
+  readonly xp: number;
+}
+
 export interface ActiveGameSave {
   readonly version: typeof SAVE_SCHEMA_VERSION;
   readonly savedAt: number;
@@ -69,6 +78,7 @@ export interface ActiveGameSave {
   readonly waveLivesAtStart: number;
   readonly towers: readonly SavedTower[];
   readonly enemies: readonly SavedEnemy[];
+  readonly hero?: SavedHero | null;
   readonly wave: SavedWave;
 }
 
@@ -85,6 +95,7 @@ const defaultSettings = (): GameSettings => ({
   completedLevelIds: [],
   bestScoreByLevel: {},
   bestDifficultyByLevel: {},
+  heroLevel: 1,
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -156,6 +167,9 @@ export class GameStorage {
       completedLevelIds: completed,
       bestScoreByLevel: scoreRecord(parsed.bestScoreByLevel),
       bestDifficultyByLevel: difficultyRecord(parsed.bestDifficultyByLevel),
+      heroLevel: Number.isInteger(parsed.heroLevel) && Number(parsed.heroLevel) >= 1
+        ? Number(parsed.heroLevel)
+        : 1,
     };
   }
 
@@ -205,6 +219,7 @@ export class GameStorage {
       completedLevelIds: [],
       bestScoreByLevel: legacyScore > 0 ? { "level-1": legacyScore } : {},
       bestDifficultyByLevel: {},
+      heroLevel: 1,
     };
     this.saveSettings(migrated);
     return migrated;
@@ -218,6 +233,17 @@ export class GameStorage {
       || !Number.isInteger(value.contentVersion)
       || Number(value.contentVersion) < 1) return false;
     if (!isRecord(value.flow) || !isRecord(value.wave)) return false;
+    if (value.hero !== undefined && value.hero !== null) {
+      if (!isRecord(value.hero)
+        || typeof value.hero.id !== "string"
+        || value.hero.id.length === 0
+        || !this.isPosition(value.hero.position)
+        || (value.hero.moveTarget !== null && !this.isPosition(value.hero.moveTarget))
+        || !Number.isInteger(value.hero.level)
+        || Number(value.hero.level) < 1
+        || !Number.isInteger(value.hero.xp)
+        || Number(value.hero.xp) < 0) return false;
+    }
     return Number.isFinite(value.lives)
       && Number.isFinite(value.gold)
       && Number.isFinite(value.score)
@@ -229,6 +255,10 @@ export class GameStorage {
       && Array.isArray(value.towers)
       && Array.isArray(value.enemies)
       && Array.isArray(value.wave.queue);
+  }
+
+  private isPosition(value: unknown): value is Position {
+    return isRecord(value) && Number.isFinite(value.x) && Number.isFinite(value.y);
   }
 
   private read(key: string): unknown {

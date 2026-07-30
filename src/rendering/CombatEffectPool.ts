@@ -7,6 +7,9 @@ export interface CombatEffectEvent {
   readonly damageType?: string;
   readonly areaRadius?: number;
   readonly phase?: number;
+  readonly sourceId?: string;
+  readonly targetId?: string;
+  readonly reward?: number;
 }
 
 export interface VisualEffect {

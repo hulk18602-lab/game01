@@ -32,6 +32,7 @@ export class CombatSystem {
         chainFalloff: tower.chainFalloff,
         chainRange: tower.chainRange,
         color: tower.projectileColor ?? tower.color,
+        projectileType: tower.projectileType,
         statusEffect: tower.statusEffect,
       });
       tower.cooldown = 1 / tower.fireRate;

@@ -14,6 +14,7 @@ import map01 from "../content/maps/map01.js";
 import towerTypes from "../content/towers/towerTypes.js";
 import waveDefinitions from "../content/waves/waveDefinitions.js";
 import Enemy from "../entities/Enemy.js";
+import { HeroEntity } from "../entities/HeroEntity.js";
 import Path from "../path/Path.js";
 import {
   CombatEffectPool,
@@ -39,6 +40,7 @@ import {
   type RuntimeTowerDefinition,
 } from "./runtime.js";
 import { BattleSimulation } from "./systems/index.js";
+import { HeroMovementSystem, type HeroMovementInput } from "./systems/HeroMovementSystem.js";
 import {
   cellKey,
   type CellDefinition,
@@ -179,6 +181,8 @@ export interface ProjectileEntity {
   readonly areaRadius?: number;
   readonly radius?: number;
   readonly color?: string;
+  readonly projectileType?: string;
+  readonly rotation?: number;
   position: { x: number; y: number };
 }
 
@@ -215,6 +219,8 @@ export interface CampaignRuntime extends GameState {
   message: UiMessage | null;
   enemies: EnemyEntity[];
   runtimeTowers: RuntimeTower[];
+  hero: HeroEntity | null;
+  selectedHeroId: string | null;
   effects: VisualEffect[];
   screenShake: number;
   reducedMotion: boolean;
@@ -265,7 +271,12 @@ interface BattleResult {
 
 interface BattleSimulationPort {
   readonly projectiles: { readonly projectiles: ProjectileEntity[] };
-  update(deltaSeconds: number, towers: RuntimeTower[], enemies: EnemyEntity[]): BattleResult;
+  update(
+    deltaSeconds: number,
+    towers: RuntimeTower[],
+    enemies: EnemyEntity[],
+    hero?: HeroEntity | null,
+  ): BattleResult;
   reset(): void;
 }
 
@@ -337,6 +348,8 @@ export class CampaignSession {
   #state: CampaignRuntime;
   #waveSystem!: WaveSystemPort;
   #battle!: BattleSimulationPort;
+  #heroMovement!: HeroMovementSystem;
+  #heroMovementInput: HeroMovementInput = { x: 0, y: 0 };
   #nextTower = 1;
   #waveLivesAtStart = 0;
   #autosaveElapsed = 0;
@@ -465,7 +478,7 @@ export class CampaignSession {
       number: level.number,
       name: level.name,
       description: level.description,
-      unlocked: level.number <= 2 && this.#settings.unlockedLevelIds.includes(level.id),
+      unlocked: level.playable && this.#settings.unlockedLevelIds.includes(level.id),
       completed: this.#settings.completedLevelIds.includes(level.id),
       bestScore: this.#settings.bestScoreByLevel[level.id] ?? 0,
       bestDifficulty: this.#settings.bestDifficultyByLevel[level.id] ?? null,
@@ -480,7 +493,7 @@ export class CampaignSession {
   isLevelUnlocked(levelId: LevelId): boolean {
     const level = this.levels.find((candidate) => candidate.id === levelId);
     return level !== undefined
-      && level.number <= 2
+      && level.playable
       && this.#settings.unlockedLevelIds.includes(levelId);
   }
 
@@ -498,6 +511,10 @@ export class CampaignSession {
 
   get projectiles(): readonly ProjectileEntity[] {
     return this.#battle.projectiles.projectiles;
+  }
+
+  get hero(): HeroEntity | null {
+    return this.#state.hero;
   }
 
   get selectedTowerRange(): { readonly position: Position; readonly range: number } | null {
@@ -545,6 +562,7 @@ export class CampaignSession {
     this.#nextTower = 1;
     this.#waveLivesAtStart = content.lives;
     this.#autosaveElapsed = 0;
+    this.#heroMovementInput = { x: 0, y: 0 };
     this.#settings = {
       ...this.#settings,
       difficulty,
@@ -608,6 +626,7 @@ export class CampaignSession {
     this.flow.returnToMenu();
     this.#state.selectedBuildType = null;
     this.#state.selectedTowerId = null;
+    this.#state.selectedHeroId = null;
     this.#state.placementPreview = null;
     this.#emit();
   }
@@ -623,6 +642,7 @@ export class CampaignSession {
     this.flow.openLevelSelect();
     this.#state.selectedBuildType = null;
     this.#state.selectedTowerId = null;
+    this.#state.selectedHeroId = null;
     this.#state.placementPreview = null;
     this.#emit();
   }
@@ -709,6 +729,7 @@ export class CampaignSession {
     }
     this.#state.selectedBuildType = type;
     this.#state.selectedTowerId = null;
+    this.#state.selectedHeroId = null;
     this.#state.hoveredEnemyId = null;
     this.#showMessage(`Building ${tower.name}. Choose a buildable cell.`, "info");
     this.#emit();
@@ -721,6 +742,7 @@ export class CampaignSession {
       this.#showMessage("Building cancelled.", "info");
     } else {
       this.#state.selectedTowerId = null;
+      this.#state.selectedHeroId = null;
     }
     this.#emit();
   }
@@ -745,12 +767,40 @@ export class CampaignSession {
       this.placeSelectedTower(point);
       return;
     }
+    const hero = this.#state.hero;
+    if (hero && Math.hypot(hero.position.x - point.x, hero.position.y - point.y) <= hero.radius + 8) {
+      this.#state.selectedHeroId = hero.id;
+      this.#state.selectedTowerId = null;
+      this.#state.hoveredEnemyId = null;
+      this.#emit();
+      return;
+    }
     const selected = this.#state.runtimeTowers.find(
       (tower) => Math.hypot(tower.position.x - point.x, tower.position.y - point.y) <= tower.radius + 7,
     );
     this.#state.selectedTowerId = selected?.id ?? null;
+    this.#state.selectedHeroId = null;
     this.#state.hoveredEnemyId = selected ? null : (this.#enemyAt(point)?.id ?? null);
     this.#emit();
+  }
+
+  moveHero(point: Position): void {
+    if (this.flow.phase !== "preparing" && this.flow.phase !== "wave") return;
+    const hero = this.#state.hero;
+    if (!hero) throw new CommandValidationError("This level has no controllable hero.");
+    const error = this.#heroMovement.setDestination(hero, point, this.#state.occupiedCells);
+    if (error) throw new CommandValidationError(error);
+    this.#state.selectedHeroId = hero.id;
+    this.#state.selectedTowerId = null;
+    this.#showMessage(`${hero.name} is moving to the marked position.`, "info");
+    this.#saveGame();
+    this.#emit();
+  }
+
+  setHeroMovementInput(input: HeroMovementInput): void {
+    const x = Number.isFinite(input.x) ? Math.max(-1, Math.min(1, input.x)) : 0;
+    const y = Number.isFinite(input.y) ? Math.max(-1, Math.min(1, input.y)) : 0;
+    this.#heroMovementInput = { x, y };
   }
 
   placeSelectedTower(point: Position): Tower {
@@ -837,6 +887,15 @@ export class CampaignSession {
     this.#state.elapsedSeconds += scaledDelta;
     this.#effectPool.update(scaledDelta);
     this.#state.screenShake = this.#effectPool.shakeIntensity;
+    if (this.#state.hero) {
+      this.#heroMovement.update(
+        scaledDelta,
+        this.#state.hero,
+        this.#state.occupiedCells,
+        this.#heroMovementInput,
+      );
+      this.#state.hero.tickAnimation(scaledDelta);
+    }
 
     if (this.flow.phase === "preparing") {
       if (this.flow.update(scaledDelta)) this.startWave(false);
@@ -852,6 +911,7 @@ export class CampaignSession {
       scaledDelta,
       this.#state.runtimeTowers,
       this.#state.enemies,
+      this.#state.hero,
     );
     this.#state.lives = Math.max(0, this.#state.lives - result.baseDamage);
     if (result.reward > 0) {
@@ -919,6 +979,8 @@ export class CampaignSession {
       message: null,
       enemies: [],
       runtimeTowers: [],
+      hero: this.#createHero(this.#settings.heroLevel),
+      selectedHeroId: null,
       effects: [],
       screenShake: 0,
       reducedMotion: this.#reducedMotion,
@@ -952,11 +1014,29 @@ export class CampaignSession {
         },
       ) => this.#createEnemy(type, difficulty, undefined, overrides),
     }) as unknown as BattleSimulationPort;
+    this.#heroMovement = new HeroMovementSystem(this.grid, this.converter);
     const reducedMotion = this.#state.reducedMotion;
     this.#effectPool.clear();
     this.#effectPool.setReducedMotion(reducedMotion);
     this.#state.effects = this.#effectPool.effects;
     this.#state.screenShake = 0;
+  }
+
+  #createHero(
+    level: number,
+    xp = 0,
+    position?: Position,
+    moveTarget: Position | null = null,
+  ): HeroEntity | null {
+    const definition = this.#level.heroConfig;
+    if (!definition) return null;
+    const spawn = position ?? this.converter.gridToWorld(definition.spawnCell, { center: true });
+    return new HeroEntity(definition, {
+      position: spawn,
+      moveTarget,
+      level,
+      xp,
+    });
   }
 
   #createEnemy(
@@ -1100,6 +1180,9 @@ export class CampaignSession {
       completedLevelIds,
       bestScoreByLevel,
       bestDifficultyByLevel,
+      heroLevel: outcome === "victory" && this.#state.hero
+        ? Math.max(this.#settings.heroLevel, this.#state.hero.level)
+        : this.#settings.heroLevel,
     };
     this.#saveSettings();
     this.#storage.clearGame();
@@ -1109,6 +1192,16 @@ export class CampaignSession {
 
   #recordBattleEvents(events: readonly BattleEvent[]): void {
     for (const event of events) {
+      const hero = this.#state.hero;
+      if (hero && event.sourceId === hero.id) {
+        if (event.type === "shot") hero.shotAnimation = 1;
+        if (event.type === "enemy-death") {
+          const levels = hero.gainXp(Math.max(1, Math.floor(event.reward ?? 1)));
+          if (levels > 0) {
+            this.#showMessage(`${hero.name} reached level ${hero.level}.`, "success");
+          }
+        }
+      }
       this.#effectPool.emit(event);
       this.#publish({
         type: event.type,
@@ -1169,6 +1262,13 @@ export class CampaignSession {
         statusEffects: enemy.statusEffects.map((effect) => ({ ...effect })),
         bossPhase: enemy.bossPhase,
       })),
+      hero: this.#state.hero ? {
+        id: this.#state.hero.id,
+        position: { ...this.#state.hero.position },
+        moveTarget: this.#state.hero.moveTarget ? { ...this.#state.hero.moveTarget } : null,
+        level: this.#state.hero.level,
+        xp: this.#state.hero.xp,
+      } : null,
       wave: this.#waveSystem.snapshot(),
     });
     this.#savedGameAvailable = true;
@@ -1190,6 +1290,29 @@ export class CampaignSession {
     restoredState.players.get(PLAYER_ID)!.balance = Math.max(0, Math.floor(save.gold));
     restoredState.score = Math.max(0, Math.floor(save.score));
     restoredState.elapsedSeconds = Math.max(0, save.elapsedSeconds);
+    if (this.#level.heroConfig) {
+      if (!save.hero
+        || save.hero.id !== this.#level.heroConfig.id
+        || !isFinitePosition(save.hero.position)
+        || !this.grid.isWalkable(this.converter.worldToGrid(save.hero.position))
+        || (save.hero.moveTarget !== null
+          && (!isFinitePosition(save.hero.moveTarget)
+            || !this.grid.isWalkable(this.converter.worldToGrid(save.hero.moveTarget))))) {
+        throw new Error("Save contains an invalid hero");
+      }
+      const restoredHero = this.#createHero(
+        save.hero.level,
+        save.hero.xp,
+        save.hero.position,
+        save.hero.moveTarget,
+      );
+      if (!restoredHero || save.hero.xp >= restoredHero.xpToNextLevel) {
+        throw new Error("Save contains invalid hero progression");
+      }
+      restoredState.hero = restoredHero;
+    } else if (save.hero) {
+      throw new Error("Save contains a hero unavailable in this level");
+    }
     this.#state = restoredState;
     this.flow.restore(save.flow);
     this.#resetSystems();
@@ -1199,6 +1322,7 @@ export class CampaignSession {
     this.#waveSystem.restore(save.wave);
     this.#nextTower = save.nextTower;
     this.#waveLivesAtStart = save.waveLivesAtStart;
+    this.#heroMovementInput = { x: 0, y: 0 };
 
     for (const savedTower of save.towers) {
       const definition = this.#tower(savedTower.type);
@@ -1224,6 +1348,13 @@ export class CampaignSession {
       this.#state.towers.set(tower.id, tower);
       this.#state.occupiedCells.set(cellKey(tower.position), tower.id);
       this.#state.runtimeTowers.push(this.#createRuntimeTower(tower));
+    }
+    if (this.#state.hero) {
+      this.#heroMovement.restoreDestination(
+        this.#state.hero,
+        this.#state.hero.moveTarget,
+        this.#state.occupiedCells,
+      );
     }
 
     for (const savedEnemy of save.enemies) {
@@ -1283,6 +1414,7 @@ export class CampaignSession {
       completedLevelIds: this.#settings.completedLevelIds,
       bestScoreByLevel: this.#settings.bestScoreByLevel,
       bestDifficultyByLevel: this.#settings.bestDifficultyByLevel,
+      heroLevel: this.#settings.heroLevel,
     });
   }
 

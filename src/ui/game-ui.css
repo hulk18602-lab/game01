@@ -17,6 +17,7 @@
 .game-ui__hud,
 .game-ui__build-panel,
 .game-ui__tower-panel,
+.game-ui__hero-panel,
 .game-ui__enemy-tooltip,
 .game-ui__message {
   position: fixed;
@@ -221,6 +222,14 @@
   box-shadow: 0 30px 100px rgb(0 0 0 / 58%), inset 0 1px rgb(255 255 255 / 10%);
   overflow-y: auto;
 }
+.game-ui__hero-panel {
+  top: 108px;
+  left: 14px;
+  width: min(310px, calc(100vw - 28px));
+  box-sizing: border-box;
+  border-color: rgb(134 239 172 / 54%);
+}
+.game-ui__hero-panel p { margin-bottom: 4px; }
 .game-ui__eyebrow {
   color: #9dd9ca;
   font-size: 12px;
@@ -264,6 +273,7 @@
   .game-ui__wave-intel { grid-column: 1; }
   .game-ui__message { top: 150px; }
   .game-ui__enemy-tooltip { top: 154px; }
+  .game-ui__hero-panel { top: 198px; }
   .game-ui__build-list { overflow-x: auto; }
 }
 
@@ -278,6 +288,7 @@
   .game-ui__build-panel { right: 6px; bottom: 6px; left: 6px; }
   .game-ui__tower-panel { right: 6px; bottom: 104px; left: 6px; width: auto; }
   .game-ui__enemy-tooltip { top: 152px; right: 6px; }
+  .game-ui__hero-panel { top: 198px; left: 6px; }
   .game-ui__tower-card { min-width: 126px; }
 }
 

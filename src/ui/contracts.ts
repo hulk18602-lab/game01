@@ -84,6 +84,18 @@ export interface DifficultyOptionView {
   readonly lives: number;
 }
 
+export interface HeroView {
+  readonly id: string;
+  readonly name: string;
+  readonly level: number;
+  readonly xp: number;
+  readonly xpToNextLevel: number;
+  readonly damage: number;
+  readonly range: number;
+  readonly fireRate: number;
+  readonly target: string | null;
+}
+
 export interface LevelOptionView {
   readonly id: LevelId;
   readonly number: number;
@@ -128,6 +140,7 @@ export interface UiView {
   readonly buildOptions: readonly BuildOptionView[];
   readonly selectedTower: SelectedTowerView | null;
   readonly enemyTooltip: EnemyTooltipView | null;
+  readonly hero: HeroView | null;
   readonly overlay: OverlayView;
   readonly selectedBuildType: string | null;
   readonly message: UiMessageView | null;
@@ -166,6 +179,7 @@ export interface UiSelectors<State> {
   buildOptions(state: State): readonly BuildOptionView[];
   selectedTower(state: State): SelectedTowerView | null;
   enemyTooltip(state: State): EnemyTooltipView | null;
+  hero(state: State): HeroView | null;
   overlay(state: State): OverlayView;
   selectedBuildType(state: State): string | null;
   message(state: State): UiMessageView | null;
@@ -185,6 +199,7 @@ export function selectUiView<State>(state: State, selectors: UiSelectors<State>)
     buildOptions: selectors.buildOptions(state),
     selectedTower: selectors.selectedTower(state),
     enemyTooltip: selectors.enemyTooltip(state),
+    hero: selectors.hero(state),
     overlay: selectors.overlay(state),
     selectedBuildType: selectors.selectedBuildType(state),
     message: selectors.message(state),

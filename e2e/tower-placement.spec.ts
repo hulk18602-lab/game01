@@ -7,6 +7,7 @@ type DebugEntity = {
   readonly type?: string;
   readonly health?: number;
   readonly targetId?: string | null;
+  readonly projectileType?: string;
   readonly position?: { readonly x: number; readonly y: number };
 };
 
@@ -31,6 +32,16 @@ declare global {
       readonly canvasHeight: number;
       readonly reducedMotion: boolean;
       readonly activeEffects: number;
+      readonly hero: {
+        readonly id: string;
+        readonly position: { readonly x: number; readonly y: number };
+        readonly moveTarget: { readonly x: number; readonly y: number } | null;
+        readonly targetId: string | null;
+        readonly level: number;
+        readonly xp: number;
+        readonly xpToNextLevel: number;
+        readonly arrowProjectiles: readonly DebugEntity[];
+      } | null;
     };
   }
 }

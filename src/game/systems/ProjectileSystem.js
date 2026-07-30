@@ -15,6 +15,8 @@ const createProjectile = () => ({
   chainFalloff: 1,
   chainRange: 0,
   color: '#f8fafc',
+  projectileType: 'orb',
+  rotation: 0,
   statusEffect: null,
   spent: true,
 });
@@ -46,6 +48,8 @@ export class ProjectileSystem {
     created.chainFalloff = projectile.chainFalloff ?? 1;
     created.chainRange = projectile.chainRange ?? 0;
     created.color = projectile.color ?? '#f8fafc';
+    created.projectileType = projectile.projectileType ?? 'orb';
+    created.rotation = 0;
     created.statusEffect = projectile.statusEffect ?? null;
     created.spent = false;
     this.projectiles.push(created);
@@ -75,6 +79,7 @@ export class ProjectileSystem {
       const dx = targetPosition.x - projectile.position.x;
       const dy = targetPosition.y - projectile.position.y;
       const distance = Math.hypot(dx, dy);
+      if (distance > 0) projectile.rotation = Math.atan2(dy, dx);
       const travel = projectile.speed * deltaSeconds;
       if (distance <= travel + this.hitRadius) {
         projectile.position.x = targetPosition.x;
@@ -168,6 +173,7 @@ export class ProjectileSystem {
         targetId: victim.id,
         position: { x: position.x, y: position.y },
         damageType: projectile.damageType,
+        reward: victim.reward ?? 0,
       });
     } else if (projectile.statusEffect && statusEffectSystem) {
       statusEffectSystem.apply(victim, projectile.statusEffect);

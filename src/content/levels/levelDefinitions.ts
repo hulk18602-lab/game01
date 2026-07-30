@@ -1,18 +1,30 @@
 import map01 from "../maps/map01.js";
 import map02 from "../maps/map02.js";
+import map03 from "../maps/map03.js";
 import waveDefinitions from "../waves/waveDefinitions.js";
 import level02WaveDefinitions from "../waves/level02WaveDefinitions.js";
+import level03WaveDefinitions from "../waves/level03WaveDefinitions.js";
 import type { MapDefinition, WaveDefinition } from "../../game/CampaignSession.js";
+import type { Position } from "../../game/types.js";
 
 export type LevelId = "level-1" | "level-2" | "level-3" | "level-4";
 
 export interface HeroLevelConfig {
   readonly id: string;
+  readonly name: string;
+  readonly spawnCell: Position;
+  readonly speed: number;
+  readonly range: number;
+  readonly damage: number;
+  readonly fireRate: number;
+  readonly projectileSpeed: number;
+  readonly xpToNextLevel: number;
 }
 
 export interface LevelDefinition {
   readonly id: LevelId;
   readonly number: number;
+  readonly playable: boolean;
   readonly name: string;
   readonly description: string;
   readonly map: MapDefinition;
@@ -35,6 +47,7 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
   defineLevel({
     id: "level-1",
     number: 1,
+    playable: true,
     name: "River Outpost",
     description: "Hold the river crossing through twelve escalating waves.",
     map: map01 as unknown as MapDefinition,
@@ -48,6 +61,7 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
   defineLevel({
     id: "level-2",
     number: 2,
+    playable: true,
     name: "Serpent Pass",
     description: "Defend a long winding pass with Tesla and Poison technology.",
     map: map02 as unknown as MapDefinition,
@@ -55,25 +69,37 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
     availableTowerTypes: serpentTowers,
     availableEnemyTypes: serpentEnemies,
     heroConfig: null,
-    unlocksLevelId: null,
+    unlocksLevelId: "level-3",
     contentVersion: 1,
   }),
   defineLevel({
     id: "level-3",
     number: 3,
-    name: "The Sunken Crown",
-    description: "A future campaign chapter. Complete Serpent Pass content first.",
-    map: map02 as unknown as MapDefinition,
-    waves: level02WaveDefinitions as unknown as readonly WaveDefinition[],
+    playable: true,
+    name: "Greenwood Siege",
+    description: "Command Rowan the archer across a sprawling forest battlefield.",
+    map: map03 as unknown as MapDefinition,
+    waves: level03WaveDefinitions as unknown as readonly WaveDefinition[],
     availableTowerTypes: serpentTowers,
     availableEnemyTypes: serpentEnemies,
-    heroConfig: null,
+    heroConfig: Object.freeze({
+      id: "hero-rowan",
+      name: "Rowan",
+      spawnCell: Object.freeze({ x: 11, y: 10 }),
+      speed: 180,
+      range: 210,
+      damage: 28,
+      fireRate: 1.25,
+      projectileSpeed: 600,
+      xpToNextLevel: 80,
+    }),
     unlocksLevelId: null,
     contentVersion: 1,
   }),
   defineLevel({
     id: "level-4",
     number: 4,
+    playable: false,
     name: "Dragon's Reach",
     description: "A future campaign chapter, currently sealed.",
     map: map02 as unknown as MapDefinition,
