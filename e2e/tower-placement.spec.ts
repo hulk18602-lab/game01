@@ -173,13 +173,14 @@ test("menu, tutorial and stable build controls lead to tower placement", async (
   await expect(page.getByRole("status")).toHaveText("Basic tower built.");
   await expect(page.getByText("Gold: 250", { exact: true })).toBeVisible();
   await expect(basic).toHaveAttribute("aria-pressed", "true");
-  expect((await cellPixel(canvas, 4, 4)).slice(0, 3)).toEqual([96, 165, 250]);
+  // The procedural medieval renderer replaces the former flat blue tower token.
+  expect((await cellPixel(canvas, 4, 4)).slice(0, 3)).toEqual([138, 93, 56]);
 
   await page.keyboard.press("Escape");
   await clickCell(page, canvas, 4, 4);
   const towerPanel = page.getByLabel("Selected tower");
   await expect(towerPanel).toBeVisible();
-  await expect(towerPanel.getByRole("heading", { name: "Basic tower" })).toBeVisible();
+  await expect(towerPanel.getByRole("heading", { name: "Warden's Ballista" })).toBeVisible();
 
   const upgrade = towerPanel.getByRole("button", { name: "Upgrade · 100" });
   const sell = towerPanel.getByRole("button", { name: "Sell · 50" });

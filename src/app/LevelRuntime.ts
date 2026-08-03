@@ -25,6 +25,9 @@ import {
 } from "../rendering/index.js";
 import MonsterSpriteRenderer from "../rendering/monsters/MonsterSpriteRenderer.js";
 import type { HeroVisualState } from "../rendering/hero/HeroVisualState.js";
+import TowerRenderer, {
+  type TowerRendererDiagnostics,
+} from "../rendering/towers/TowerRenderer.js";
 import { GameUi, type UiCommand } from "../ui/index.js";
 import type { AudioManager } from "../audio/AudioManager.js";
 import { createUiSelectors } from "./createUiSelectors.js";
@@ -36,6 +39,7 @@ interface RenderState {
   effects: readonly VisualEffect[];
   placementPreview: CampaignRuntime["placementPreview"];
   selectedTowerRange: { readonly position: Position; readonly range: number } | null;
+  selectedTowerId: string | null;
   hero: CampaignRuntime["hero"];
   selectedHeroId: string | null;
   visualTime: number;
@@ -96,6 +100,7 @@ export class LevelRuntime {
   readonly #camera: InstanceType<typeof Camera>;
   readonly #renderer: RendererPort;
   readonly #heroLayer: HeroLayer;
+  readonly #towerRenderer: TowerRenderer;
   readonly #ui: GameUi<CampaignRuntime>;
   readonly #pointer: PointerInputAdapter;
   readonly #unsubscribePresentation: () => void;
@@ -107,6 +112,7 @@ export class LevelRuntime {
     effects: [],
     placementPreview: null,
     selectedTowerRange: null,
+    selectedTowerId: null,
     hero: null,
     selectedHeroId: null,
     visualTime: 0,
@@ -155,6 +161,7 @@ export class LevelRuntime {
     const MapLayerAdapter = MapLayer as unknown as MapLayerConstructor;
     const DebugLayerAdapter = DebugLayer as unknown as DebugLayerConstructor;
     const monsterRenderer = new MonsterSpriteRenderer();
+    this.#towerRenderer = new TowerRenderer();
     this.#heroLayer = new HeroLayer();
     void monsterRenderer.preload((progress) => {
       this.canvas.dataset.monsterLoadingProgress = progress.toFixed(2);
@@ -164,8 +171,8 @@ export class LevelRuntime {
       camera: this.#camera,
       layers: [
         new MapLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
-        new PlacementLayer() as unknown as CanvasLayer,
-        new EntityLayer({ monsterRenderer }) as unknown as CanvasLayer,
+        new PlacementLayer({ towerRenderer: this.#towerRenderer }) as unknown as CanvasLayer,
+        new EntityLayer({ monsterRenderer, towerRenderer: this.#towerRenderer }) as unknown as CanvasLayer,
         this.#heroLayer as unknown as CanvasLayer,
         new EffectLayer() as unknown as CanvasLayer,
         new DebugLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
@@ -225,6 +232,10 @@ export class LevelRuntime {
     return this.#heroLayer.visualState;
   }
 
+  get towerRendererDiagnostics(): TowerRendererDiagnostics {
+    return this.#towerRenderer.diagnostics;
+  }
+
   render(): void {
     const state = this.session.getState();
     this.#renderState.runtimeTowers = state.runtimeTowers;
@@ -233,6 +244,7 @@ export class LevelRuntime {
     this.#renderState.effects = state.effects;
     this.#renderState.placementPreview = state.placementPreview;
     this.#renderState.selectedTowerRange = this.session.selectedTowerRange;
+    this.#renderState.selectedTowerId = state.selectedTowerId;
     this.#renderState.hero = state.hero;
     this.#renderState.selectedHeroId = state.selectedHeroId;
     const visualTime = state.reducedMotion

@@ -201,6 +201,7 @@ export interface ProjectileEntity {
 export type { VisualEffect } from "../rendering/CombatEffectPool.js";
 
 export interface PlacementPreview {
+  readonly type: string;
   readonly position: Position;
   readonly cellBounds: Position & { readonly width: number; readonly height: number };
   readonly range: number;
@@ -1153,6 +1154,7 @@ export class CampaignSession {
     const cell = this.converter.worldToGrid(point);
     const level = definition.levels[0]!;
     this.#state.placementPreview = {
+      type,
       position: this.converter.gridToWorld(cell, { center: true }),
       cellBounds: this.converter.gridRect(cell),
       range: level.range,

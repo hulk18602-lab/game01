@@ -167,7 +167,114 @@
 .game-ui__button.is-unavailable:not(.is-selected) { opacity: .58; }
 .game-ui__button:disabled { cursor: not-allowed; filter: grayscale(.55); opacity: .48; }
 
-.game-ui__tower-card { min-width: 140px; text-align: left; }
+.game-ui__tower-card {
+  display: grid;
+  min-width: 218px;
+  grid-template-columns: 48px minmax(112px, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 3px 9px;
+  align-items: center;
+  text-align: left;
+}
+.game-ui__tower-card-copy { display: grid; min-width: 0; }
+.game-ui__tower-card-copy strong {
+  overflow: hidden;
+  color: #fff1c8;
+  font: 750 13px/1.2 Georgia, serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-ui__tower-card-copy small {
+  overflow: hidden;
+  color: var(--game-ui-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-ui__tower-card-cost {
+  align-self: start;
+  color: #f6c85f;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.game-ui__tower-card-stats {
+  grid-column: 2 / 4;
+  color: #9dd9ca;
+  font-size: 9px;
+  letter-spacing: .025em;
+  white-space: nowrap;
+}
+.game-ui__tower-icon {
+  --tower-accent: #60a5fa;
+  --tower-dark: #29323b;
+  position: relative;
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  grid-row: 1 / 3;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 32%, #b8aa8c 0 18%, #6e6253 20% 43%, #2a2e32 45% 66%, #121a20 68%);
+  box-shadow: inset 0 2px 4px rgb(255 255 255 / 18%), 0 5px 12px rgb(0 0 0 / 35%);
+  isolation: isolate;
+}
+.game-ui__tower-icon-base {
+  position: absolute;
+  z-index: -1;
+  width: 32px;
+  height: 23px;
+  border: 2px solid var(--tower-dark);
+  border-radius: 50%;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--tower-accent) 24%, #877966), #403c38);
+  box-shadow: inset 0 2px rgb(255 255 255 / 15%);
+}
+.game-ui__tower-icon-core {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 19px;
+  height: 19px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--tower-accent) 65%, white);
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--tower-accent) 64%, white);
+  font: 800 11px/1 Georgia, serif;
+  background: color-mix(in srgb, var(--tower-dark) 72%, var(--tower-accent));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tower-accent) 60%, transparent);
+}
+.game-ui__tower-icon::after {
+  position: absolute;
+  z-index: 1;
+  width: 25px;
+  height: 4px;
+  border: 1px solid #191f23;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d8c49b, #725337);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  content: "";
+  transform: translate(9px, -4px) rotate(-35deg);
+}
+.game-ui__tower-icon[data-tower-type="rapid"] { --tower-accent: #a78bfa; --tower-dark: #3c3046; }
+.game-ui__tower-icon[data-tower-type="rapid"]::after { height: 7px; background: repeating-linear-gradient(180deg, #d8c49b 0 2px, #4c3560 2px 4px); }
+.game-ui__tower-icon[data-tower-type="frost"] { --tower-accent: #67e8f9; --tower-dark: #264653; }
+.game-ui__tower-icon[data-tower-type="frost"] .game-ui__tower-icon-core { border-radius: 2px 9px; transform: rotate(45deg); }
+.game-ui__tower-icon[data-tower-type="frost"] .game-ui__tower-icon-core::first-letter { transform: rotate(-45deg); }
+.game-ui__tower-icon[data-tower-type="frost"]::after { display: none; }
+.game-ui__tower-icon[data-tower-type="cannon"] { --tower-accent: #fb923c; --tower-dark: #3d2c25; border-radius: 10px; }
+.game-ui__tower-icon[data-tower-type="cannon"]::after { width: 28px; height: 8px; background: linear-gradient(#c78b51, #5f3e29); }
+.game-ui__tower-icon[data-tower-type="sniper"] { --tower-accent: #f472b6; --tower-dark: #402d42; }
+.game-ui__tower-icon[data-tower-type="sniper"]::after { width: 35px; height: 3px; background: linear-gradient(#e2e8f0, #788493); }
+.game-ui__tower-icon[data-tower-type="tesla"] { --tower-accent: #fde047; --tower-dark: #3a3828; }
+.game-ui__tower-icon[data-tower-type="tesla"]::after { width: 3px; height: 24px; background: #b77a43; transform: translate(7px, -6px) rotate(25deg); }
+.game-ui__tower-icon[data-tower-type="poison"] { --tower-accent: #4ade80; --tower-dark: #293b2e; }
+.game-ui__tower-icon[data-tower-type="poison"]::after { width: 20px; height: 11px; background: linear-gradient(#86efac, #14532d); transform: translate(7px, 4px) rotate(-25deg); }
+.game-ui__tower-icon--large { width: 58px; height: 58px; grid-row: auto; }
+.game-ui__tower-panel-header { display: flex; gap: 11px; align-items: center; }
+.game-ui__tower-panel-header h2 { margin: 0 0 2px; color: #fff1c8; font-family: Georgia, serif; }
+.game-ui__tower-role { margin: 0 !important; color: #9dd9ca; font-size: 11px; }
+.game-ui__tower-description { margin: 8px 0; color: var(--game-ui-muted); font-size: 12px; font-weight: 520; }
 .game-ui__audio {
   margin-top: 16px;
   justify-content: center;

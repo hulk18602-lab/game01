@@ -89,25 +89,39 @@ export class CombatEffectPool {
     if (event.type === "hit") {
       const cold = event.damageType === "cold";
       const explosive = (event.areaRadius ?? 0) > 0;
+      const electric = event.damageType === "electric";
+      const poison = event.damageType === "poison";
+      const hitColor = cold
+        ? "#a5f3fc"
+        : explosive
+          ? "#fb923c"
+          : electric
+            ? "#fde047"
+            : poison
+              ? "#4ade80"
+              : "#f8fafc";
       this.#activate(
-        cold ? "frost-hit" : explosive ? "explosion-ring" : "hit-ring",
+        cold ? "frost-hit" : explosive ? "explosion-ring" : electric ? "arc-hit" : poison ? "poison-cloud" : "hit-ring",
         event.position,
-        cold ? 12 : explosive ? Math.max(18, (event.areaRadius ?? 0) * 0.4) : 9,
-        cold ? "#a5f3fc" : explosive ? "#fb923c" : "#f8fafc",
-        explosive ? 0.34 : 0.2,
-        false,
-        "circle",
-        explosive ? 52 : 18,
+        cold ? 12 : explosive ? Math.max(18, (event.areaRadius ?? 0) * 0.4) : poison ? 14 : 9,
+        hitColor,
+        explosive ? 0.34 : poison ? .48 : 0.2,
+        poison,
+        poison ? "smoke" : "circle",
+        explosive ? 52 : poison ? 12 : 18,
         explosive ? 4 : 2,
       );
       this.#floatingDamage(event.position, Math.round(event.damage ?? 0), cold);
       this.#burst(
         event.position,
-        cold ? "#67e8f9" : explosive ? "#fdba74" : "#fef3c7",
-        this.#reducedMotion ? 2 : explosive ? 14 : cold ? 8 : 5,
+        cold ? "#67e8f9" : explosive ? "#fdba74" : electric ? "#fef08a" : poison ? "#86efac" : "#fef3c7",
+        this.#reducedMotion ? 2 : explosive ? 14 : cold ? 8 : electric ? 10 : poison ? 7 : 5,
         explosive ? 105 : 68,
-        cold ? "snow" : "spark",
+        cold ? "snow" : poison ? "smoke" : "spark",
       );
+      if (electric && !this.#reducedMotion) {
+        this.#activate("arc-core", event.position, 4, "#fff7ad", .13, true, "circle", 25, 2);
+      }
       if (!this.#reducedMotion && ((event.damage ?? 0) >= 80 || (event.areaRadius ?? 0) >= 60)) {
         this.shakeIntensity = Math.max(
           this.shakeIntensity,

@@ -7,20 +7,11 @@ import {
   heroSkillIds,
 } from "../content/heroes/heroSkills.js";
 import { eldrinVisual, visualTierForHeroLevel } from "../content/visuals/heroVisuals.js";
+import { getTowerVisual } from "../content/visuals/towerVisuals.js";
 import type {
   OverlayView,
   UiSelectors,
 } from "../ui/index.js";
-
-const icons: Readonly<Record<string, string>> = {
-  basic: "◆",
-  rapid: "⚡",
-  frost: "❄",
-  cannon: "●",
-  sniper: "⌖",
-  tesla: "⚡",
-  poison: "☠",
-};
 
 export const isGameplayPhase = (phase: string): boolean =>
   phase === "preparing" || phase === "wave" || phase === "paused";
@@ -55,11 +46,13 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
     audio: () => session.audioSettings,
     buildOptions: (state) => session.towerOptions.map((tower) => {
       const level = tower.levels[0]!;
+      const visual = getTowerVisual(tower.id);
       return {
         type: tower.id,
         name: tower.name,
-        description: tower.description,
-        icon: icons[tower.id] ?? "◆",
+        description: visual.description,
+        role: `${visual.name} · ${visual.role}`,
+        icon: visual.rune,
         hotkey: tower.hotkey,
         cost: level.cost,
         damage: level.damage,
@@ -77,9 +70,13 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
       const next = definition.levels[tower.level + 1];
       const runtime = state.runtimeTowers.find((candidate) => candidate.id === tower.id);
       const money = state.players.get("player")!.balance;
+      const visual = getTowerVisual(tower.type);
       return {
         id: tower.id,
-        name: definition.name,
+        type: tower.type,
+        name: visual.name,
+        role: visual.role,
+        description: visual.description,
         level: tower.level + 1,
         damage: current.damage,
         range: current.range,

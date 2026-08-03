@@ -32,6 +32,7 @@ export interface BuildOptionView {
   readonly type: string;
   readonly name: string;
   readonly description: string;
+  readonly role: string;
   readonly icon: string;
   readonly hotkey: string;
   readonly cost: number;
@@ -54,7 +55,10 @@ export interface UpgradeDeltaView {
 
 export interface SelectedTowerView {
   readonly id: string;
+  readonly type: string;
   readonly name: string;
+  readonly role: string;
+  readonly description: string;
   readonly level: number;
   readonly damage: number;
   readonly range: number;

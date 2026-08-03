@@ -15,6 +15,10 @@ export class SelectedTowerPanel {
   readonly element = element("aside", "game-ui__tower-panel");
   readonly #dispatch: CommandDispatcher;
   readonly #title = element("h2");
+  readonly #header = element("div", "game-ui__tower-panel-header");
+  readonly #icon = element("span", "game-ui__tower-icon game-ui__tower-icon--large");
+  readonly #role = element("p", "game-ui__tower-role");
+  readonly #description = element("p", "game-ui__tower-description");
   readonly #level = element("p");
   readonly #stats = element("p");
   readonly #upgradePreview = element("p", "game-ui__upgrade-preview");
@@ -27,6 +31,14 @@ export class SelectedTowerPanel {
   constructor(dispatch: CommandDispatcher) {
     this.#dispatch = dispatch;
     this.element.setAttribute("aria-label", "Selected tower");
+    this.#icon.setAttribute("aria-hidden", "true");
+    this.#icon.append(
+      element("span", "game-ui__tower-icon-base"),
+      element("span", "game-ui__tower-icon-core"),
+    );
+    const heading = element("div");
+    heading.append(this.#title, this.#role);
+    this.#header.append(this.#icon, heading);
     this.#upgrade = button("", () => {
       if (this.#towerId) this.#dispatch({ type: "upgrade-tower", towerId: this.#towerId });
     });
@@ -46,7 +58,8 @@ export class SelectedTowerPanel {
       targeting.append(control);
     }
     this.element.append(
-      this.#title,
+      this.#header,
+      this.#description,
       this.#level,
       this.#stats,
       this.#upgradePreview,
@@ -60,7 +73,10 @@ export class SelectedTowerPanel {
     const signature = tower
       ? [
         tower.id,
+        tower.type,
         tower.name,
+        tower.role,
+        tower.description,
         tower.level,
         tower.damage,
         tower.range,
@@ -88,9 +104,22 @@ export class SelectedTowerPanel {
     }
     this.#towerId = tower.id;
     this.#title.textContent = tower.name;
+    this.#role.textContent = tower.role;
+    this.#description.textContent = tower.description;
+    this.#icon.dataset.towerType = tower.type;
+    const core = this.#icon.querySelector<HTMLElement>(".game-ui__tower-icon-core");
+    if (core) {
+      core.textContent = tower.type === "frost"
+        ? "❄"
+        : tower.type === "tesla"
+          ? "ϟ"
+          : tower.type === "poison"
+            ? "☠"
+            : "◆";
+    }
     this.#level.textContent = `Level ${tower.level}/3`;
     this.#stats.textContent = tower.auraBuffed
-      ? `Rally buff · Damage ${tower.effectiveDamage.toFixed(1)} (${tower.damage} base) · Rate ${tower.effectiveFireRate.toFixed(2)}/s`
+      ? `Rally buff · Damage ${tower.effectiveDamage.toFixed(1)} (${tower.damage} base) · Range ${tower.range} · Rate ${tower.effectiveFireRate.toFixed(2)}/s`
       : `Damage ${tower.damage} · Range ${tower.range} · Rate ${tower.fireRate.toFixed(2)}/s`;
     this.#stats.classList.toggle("is-buffed", tower.auraBuffed);
     this.#upgrade.textContent = tower.upgradeCost === null
