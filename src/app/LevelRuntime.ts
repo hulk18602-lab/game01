@@ -23,6 +23,7 @@ import {
   PlacementLayer,
   Renderer,
 } from "../rendering/index.js";
+import MonsterSpriteRenderer from "../rendering/monsters/MonsterSpriteRenderer.js";
 import { GameUi, type UiCommand } from "../ui/index.js";
 import type { AudioManager } from "../audio/AudioManager.js";
 import { createUiSelectors } from "./createUiSelectors.js";
@@ -149,13 +150,17 @@ export class LevelRuntime {
     const RendererAdapter = Renderer as unknown as RendererConstructor;
     const MapLayerAdapter = MapLayer as unknown as MapLayerConstructor;
     const DebugLayerAdapter = DebugLayer as unknown as DebugLayerConstructor;
+    const monsterRenderer = new MonsterSpriteRenderer();
+    void monsterRenderer.preload((progress) => {
+      this.canvas.dataset.monsterLoadingProgress = progress.toFixed(2);
+    });
     this.#renderer = new RendererAdapter({
       context,
       camera: this.#camera,
       layers: [
         new MapLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
         new PlacementLayer() as unknown as CanvasLayer,
-        new EntityLayer() as unknown as CanvasLayer,
+        new EntityLayer({ monsterRenderer }) as unknown as CanvasLayer,
         new HeroLayer() as unknown as CanvasLayer,
         new EffectLayer() as unknown as CanvasLayer,
         new DebugLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),

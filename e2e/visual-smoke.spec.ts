@@ -102,3 +102,34 @@ test("prefers-reduced-motion disables animated camera motion", async ({ page }, 
   ).toBe(true);
   await attachScreenshot(page, testInfo, "reduced-motion-battlefield");
 });
+
+test("humanoid atlas animates movement, hit and one-shot death without console errors", async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  await page.goto("/?scenario=short");
+  await page.getByRole("button", { name: "New Game" }).click();
+  await page.getByRole("button", { name: /Play Level 1/ }).click();
+  await page.getByRole("button", { name: /Commander/ }).click();
+  const tutorial = page.getByRole("heading", { name: "Defend the outpost" });
+  if (await tutorial.isVisible()) await page.getByRole("button", { name: "Begin defense" }).click();
+  await page.getByRole("button", { name: /Start wave/ }).click();
+
+  const canvas = page.locator("canvas.game-canvas");
+  await expect.poll(() => canvas.getAttribute("data-monster-loading-progress")).toBe("1.00");
+  await expect.poll(() => page.evaluate(() => window.__GAME_DEBUG__?.enemies[0]?.id ?? null)).not.toBeNull();
+  const enemyId = await page.evaluate(() => window.__GAME_DEBUG__!.enemies[0]!.id);
+  await expect.poll(() => canvas.getAttribute("data-monster-visual-states")).toContain(`${enemyId}:walk:`);
+
+  const firstFrame = await canvas.getAttribute("data-monster-visual-states");
+  await expect.poll(() => canvas.getAttribute("data-monster-visual-states")).not.toBe(firstFrame);
+
+  await page.evaluate((id) => window.__GAME_DEBUG__!.damageEnemy(id, 1), enemyId);
+  await expect.poll(() => canvas.getAttribute("data-monster-visual-states")).toContain(`${enemyId}:hit:`);
+
+  await page.evaluate((id) => window.__GAME_DEBUG__!.damageEnemy(id, 100_000), enemyId);
+  await expect.poll(() => canvas.getAttribute("data-monster-visual-states")).toContain(`${enemyId}:death:`);
+  await expect.poll(() => canvas.getAttribute("data-monster-visual-states"), { timeout: 2_000 }).not.toContain(`${enemyId}:death:`);
+  expect(consoleErrors).toEqual([]);
+});

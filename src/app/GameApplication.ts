@@ -45,6 +45,7 @@ interface GameDebugApi {
   readonly canvasHeight: number;
   readonly reducedMotion: boolean;
   readonly activeEffects: number;
+  damageEnemy(id: string, amount: number): boolean;
   readonly hero: {
     readonly id: string;
     readonly position: { readonly x: number; readonly y: number };
@@ -357,6 +358,12 @@ export class GameApplication {
       get canvasHeight() { return application.#runtime.canvas.height; },
       get reducedMotion() { return application.#runtime.session.getState().reducedMotion; },
       get activeEffects() { return application.#runtime.session.getState().effects.length; },
+      damageEnemy(id: string, amount: number) {
+        const enemy = application.#runtime.session.getState().enemies.find((candidate) => candidate.id === id);
+        if (!enemy || !Number.isFinite(amount) || amount < 0) return false;
+        enemy.takeDamage(amount, "true");
+        return true;
+      },
       get hero() {
         const hero = application.#runtime.session.hero;
         if (!hero) return null;
