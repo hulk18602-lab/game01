@@ -171,6 +171,17 @@ export interface EnemyEntity {
   position: { x: number; y: number };
   speedMultiplier: number;
   abilitySpeedMultiplier: number;
+  supportSpeedMultiplier: number;
+  readonly coldResistance: number;
+  readonly enrageThreshold: number;
+  readonly enrageSpeed: number;
+  enraged: boolean;
+  readonly speedAura: number;
+  readonly auraRadius: number;
+  readonly healAmount: number;
+  readonly healCooldown: number;
+  readonly healRadius: number;
+  abilityCooldown: number;
   statusEffects: StatusEffect[];
   damageContributors: Map<string, number>;
   lastDamageSourceId?: string;
@@ -265,6 +276,9 @@ export interface PresentationCue {
     | "hit"
     | "enemy-death"
     | "boss-phase"
+    | "enemy-heal"
+    | "enemy-enrage"
+    | "enemy-summon"
     | "build"
     | "upgrade"
     | "sell"

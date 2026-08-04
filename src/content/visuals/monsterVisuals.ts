@@ -23,6 +23,9 @@ export interface MonsterVisualDefinition {
   readonly anchorY: number;
   readonly shadowScale: number;
   readonly placeholder: boolean;
+  readonly clothColor: string;
+  readonly accentColor: string;
+  readonly weapon: "sword" | "axe" | "banner" | "staff" | "daggers" | "mace";
   readonly animations: Readonly<Record<MonsterAnimationState, DirectionalAnimation>>;
 }
 
@@ -46,6 +49,9 @@ type VisualOptions = {
   readonly displayHeight: number;
   readonly walkFps: number;
   readonly shadowScale?: number;
+  readonly clothColor?: string;
+  readonly accentColor?: string;
+  readonly weapon?: MonsterVisualDefinition["weapon"];
 };
 
 const visual = (id: string, options: VisualOptions): MonsterVisualDefinition => Object.freeze({
@@ -62,6 +68,9 @@ const visual = (id: string, options: VisualOptions): MonsterVisualDefinition => 
   anchorY: 0.9,
   shadowScale: options.shadowScale ?? 1,
   placeholder: true,
+  clothColor: options.clothColor ?? "#475569",
+  accentColor: options.accentColor ?? "#cbd5e1",
+  weapon: options.weapon ?? "sword",
   animations: animations(options.walkFps),
 });
 
@@ -72,6 +81,22 @@ export const monsterVisuals = Object.freeze({
   armored: visual("armored", { width: 1122, height: 1402, displayWidth: 66, displayHeight: 72, walkFps: 7, shadowScale: 1.08 }),
   regenerator: visual("regenerator", { width: 1122, height: 1402, displayWidth: 60, displayHeight: 72, walkFps: 7 }),
   boss: visual("boss", { width: 1402, height: 1122, displayWidth: 104, displayHeight: 110, walkFps: 5, shadowScale: 1.45 }),
+  berserker: visual("berserker", {
+    width: 1122, height: 1402, displayWidth: 68, displayHeight: 76, walkFps: 10,
+    clothColor: "#7f1d1d", accentColor: "#f97316", weapon: "axe", shadowScale: 1.08,
+  }),
+  warBannerCaptain: visual("warBannerCaptain", {
+    width: 1122, height: 1402, displayWidth: 76, displayHeight: 84, walkFps: 6,
+    clothColor: "#78350f", accentColor: "#facc15", weapon: "banner", shadowScale: 1.2,
+  }),
+  frostboundKnight: visual("frostboundKnight", {
+    width: 1122, height: 1402, displayWidth: 80, displayHeight: 86, walkFps: 5,
+    clothColor: "#334155", accentColor: "#7dd3fc", weapon: "mace", shadowScale: 1.28,
+  }),
+  iceShaman: visual("iceShaman", {
+    width: 1122, height: 1402, displayWidth: 66, displayHeight: 80, walkFps: 7,
+    clothColor: "#164e63", accentColor: "#a5f3fc", weapon: "staff",
+  }),
 } satisfies Record<string, MonsterVisualDefinition>);
 
 const aliases: Readonly<Record<string, keyof typeof monsterVisuals>> = Object.freeze({

@@ -26,6 +26,16 @@ export class Enemy {
     this.baseDamage = overrides.baseDamage ?? definition.baseDamage;
     this.armor = overrides.armor ?? definition.armor ?? 0;
     this.regeneration = overrides.regeneration ?? definition.regeneration ?? 0;
+    this.coldResistance = overrides.coldResistance ?? definition.coldResistance ?? 0;
+    this.enrageThreshold = overrides.enrageThreshold ?? definition.enrageThreshold ?? 0;
+    this.enrageSpeed = overrides.enrageSpeed ?? definition.enrageSpeed ?? 1;
+    this.enraged = overrides.enraged ?? false;
+    this.speedAura = overrides.speedAura ?? definition.speedAura ?? 1;
+    this.auraRadius = overrides.auraRadius ?? definition.auraRadius ?? 0;
+    this.healAmount = overrides.healAmount ?? definition.healAmount ?? 0;
+    this.healCooldown = overrides.healCooldown ?? definition.healCooldown ?? 0;
+    this.healRadius = overrides.healRadius ?? definition.healRadius ?? 0;
+    this.abilityCooldown = overrides.abilityCooldown ?? 0;
     this.boss = overrides.boss ?? definition.boss ?? false;
     this.elite = overrides.elite ?? definition.elite ?? false;
     this.bossPhase = overrides.bossPhase ?? 1;
@@ -33,6 +43,7 @@ export class Enemy {
     this.position = { ...(overrides.position ?? { x: 0, y: 0 }) };
     this.speedMultiplier = 1;
     this.abilitySpeedMultiplier = 1;
+    this.supportSpeedMultiplier = 1;
     this.statusEffects = [...(overrides.statusEffects ?? [])];
     this.damageContributors = new Map(overrides.damageContributors ?? []);
     this.dead = false;
@@ -51,7 +62,9 @@ export class Enemy {
       remaining -= absorbed;
       if (remaining <= 0) return this.health;
     }
-    const armorEffect = damageType === 'physical'
+    const armorEffect = damageType === 'cold'
+      ? this.coldResistance
+      : damageType === 'physical'
       ? this.armor
       : damageType === 'explosive'
         ? this.armor * 0.35

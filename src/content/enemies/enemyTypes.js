@@ -59,6 +59,26 @@ export const enemyTypes = Object.freeze({
     health: 6200, shield: 1500, speed: 25, reward: 600, baseDamage: 12, armor: 0.25,
     color: "#e879f9", radius: 28,
   }),
+  berserker: defineEnemy({
+    id: "berserker", name: "Berserker", shortLabel: "Br", health: 430, speed: 66,
+    reward: 48, baseDamage: 4, armor: 0.08, enrageThreshold: 0.4, enrageSpeed: 1.3,
+    color: "#dc2626", radius: 16,
+  }),
+  warBannerCaptain: defineEnemy({
+    id: "warBannerCaptain", name: "War Banner Captain", shortLabel: "C", health: 680, speed: 45,
+    reward: 76, baseDamage: 5, armor: 0.22, speedAura: 1.15, auraRadius: 130,
+    color: "#b45309", radius: 19,
+  }),
+  frostboundKnight: defineEnemy({
+    id: "frostboundKnight", name: "Frostbound Knight", shortLabel: "K", health: 820, shield: 280,
+    speed: 34, reward: 92, baseDamage: 6, armor: 0.34, coldResistance: 0.55,
+    color: "#60a5fa", radius: 20,
+  }),
+  iceShaman: defineEnemy({
+    id: "iceShaman", name: "Ice Shaman", shortLabel: "I", health: 390, speed: 48,
+    reward: 70, baseDamage: 3, armor: 0.05, healAmount: 85, healCooldown: 5.5, healRadius: 165,
+    color: "#22d3ee", radius: 16,
+  }),
 });
 
 export default enemyTypes;
