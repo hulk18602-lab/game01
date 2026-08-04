@@ -71,7 +71,17 @@ type RendererConstructor = new (options: {
 type MapLayerConstructor = new (options: {
   readonly grid: unknown;
   readonly converter: unknown;
-}) => CanvasLayer;
+  readonly mapId: string;
+}) => CanvasLayer & { readonly diagnostics: MapRendererDiagnostics };
+
+export interface MapRendererDiagnostics {
+  readonly mapId: string;
+  readonly biomeId: string;
+  readonly cacheReady: boolean;
+  readonly decorationCount: number;
+  readonly routeCellCount: number;
+  readonly buildableCellCount: number;
+}
 
 type DebugLayerConstructor = new (options: {
   readonly grid: unknown;
@@ -104,6 +114,7 @@ export class LevelRuntime {
   readonly #heroLayer: HeroLayer;
   readonly #towerRenderer: TowerRenderer;
   readonly #monsterRenderer: MonsterSpriteRenderer;
+  readonly #mapLayer: CanvasLayer & { readonly diagnostics: MapRendererDiagnostics };
   readonly #ui: GameUi<CampaignRuntime>;
   readonly #pointer: PointerInputAdapter;
   readonly #unsubscribePresentation: () => void;
@@ -170,11 +181,19 @@ export class LevelRuntime {
     void this.#monsterRenderer.preload((progress) => {
       this.canvas.dataset.monsterLoadingProgress = progress.toFixed(2);
     });
+    this.#mapLayer = new MapLayerAdapter({
+      grid: this.session.grid,
+      converter: this.session.converter,
+      mapId: this.session.map.id,
+    });
+    this.canvas.dataset.biomeId = this.#mapLayer.diagnostics.biomeId;
+    this.canvas.dataset.terrainCache = this.#mapLayer.diagnostics.cacheReady ? "ready" : "fallback";
+    this.canvas.dataset.routeVisual = this.#mapLayer.diagnostics.routeCellCount > 0 ? "readable" : "missing";
     this.#renderer = new RendererAdapter({
       context,
       camera: this.#camera,
       layers: [
-        new MapLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
+        this.#mapLayer,
         new PlacementLayer({ towerRenderer: this.#towerRenderer }) as unknown as CanvasLayer,
         new EntityLayer({ monsterRenderer: this.#monsterRenderer, towerRenderer: this.#towerRenderer }) as unknown as CanvasLayer,
         this.#heroLayer as unknown as CanvasLayer,
@@ -238,6 +257,10 @@ export class LevelRuntime {
 
   get towerRendererDiagnostics(): TowerRendererDiagnostics {
     return this.#towerRenderer.diagnostics;
+  }
+
+  get mapRendererDiagnostics(): MapRendererDiagnostics {
+    return this.#mapLayer.diagnostics;
   }
 
   get monsterAtlasDiagnostics(): readonly MonsterAtlasDiagnostic[] {

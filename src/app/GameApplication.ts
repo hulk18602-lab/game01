@@ -48,6 +48,14 @@ interface GameDebugApi {
   readonly activeEffects: number;
   readonly selectedHeroAbility: string | null;
   readonly monsterAtlases: readonly MonsterAtlasDiagnostic[];
+  readonly mapRenderer: {
+    readonly mapId: string;
+    readonly biomeId: string;
+    readonly cacheReady: boolean;
+    readonly decorationCount: number;
+    readonly routeCellCount: number;
+    readonly buildableCellCount: number;
+  };
   readonly towerRenderer: {
     readonly mode: "detailed" | "fallback";
     readonly renderedTowerCount: number;
@@ -399,6 +407,7 @@ export class GameApplication {
       get activeEffects() { return application.#runtime.session.getState().effects.length; },
       get selectedHeroAbility() { return application.#runtime.session.getState().selectedHeroAbility; },
       get monsterAtlases() { return application.#runtime.monsterAtlasDiagnostics; },
+      get mapRenderer() { return application.#runtime.mapRendererDiagnostics; },
       get towerRenderer() { return application.#runtime.towerRendererDiagnostics; },
       setGold(amount: number) {
         if (!Number.isFinite(amount) || amount < 0) return false;
