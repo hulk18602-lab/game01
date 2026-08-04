@@ -75,6 +75,11 @@ test("Level 4 victory unlocks Levels 5-8 in sequence and survives reload", async
 });
 
 test("Levels 5-8 render their maps, detailed towers, hero and new humanoid monsters", async ({ page }, testInfo: TestInfo) => {
+  const browserErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
+  });
+  page.on("pageerror", (error) => browserErrors.push(`page: ${error.message}`));
   await page.addInitScript((seed) => {
     if (!localStorage.getItem("river-outpost.settings")) {
       localStorage.setItem("river-outpost.settings", JSON.stringify(seed));
@@ -83,7 +88,16 @@ test("Levels 5-8 render their maps, detailed towers, hero and new humanoid monst
   const monsterTypes = ["berserker", "frostboundKnight", "shadowAssassin", "dreadPaladin"];
   for (let level = 5; level <= 8; level += 1) {
     await page.goto("/");
-    const canvas = await openLevel(page, level);
+    await page.getByRole("button", { name: "New Game" }).click();
+    if (level === 5) {
+      for (let campaignLevel = 1; campaignLevel <= 8; campaignLevel += 1) {
+        await expect(page.getByRole("button", { name: new RegExp(`Play Level ${campaignLevel}`) })).toBeVisible();
+      }
+    }
+    await page.getByRole("button", { name: new RegExp(`Play Level ${level}`) }).click();
+    await page.getByRole("button", { name: /Commander/ }).click();
+    const canvas = page.locator("canvas.game-canvas");
+    await expect(canvas).toHaveAttribute("data-map-id", `map0${level}`);
     await page.evaluate(() => window.__GAME_DEBUG__!.setGold(2_000));
     await page.getByRole("button", { name: /^Basic tower/ }).click();
     const build = await cellPoint(canvas, 1, 1);
@@ -94,13 +108,19 @@ test("Levels 5-8 render their maps, detailed towers, hero and new humanoid monst
     await expect.poll(() => page.evaluate((id) =>
       window.__GAME_DEBUG__?.enemies.some((enemy) => enemy.id === id), enemyId)).toBe(true);
     await expect.poll(() => page.evaluate(() => window.__GAME_DEBUG__?.towerRenderer.mode)).toBe("detailed");
+    await expect.poll(() => page.evaluate(() => window.__GAME_DEBUG__?.monsterAtlases.length ?? 0)).toBe(6);
+    expect(await page.evaluate(() => window.__GAME_DEBUG__!.monsterAtlases.every(
+      (atlas) => atlas.valid && !atlas.fallbackUsed,
+    ))).toBe(true);
     await expect(canvas).toHaveAttribute("data-hero-rendered", "true");
+    await expect(canvas).toHaveAttribute("data-monster-atlas-valid", "true");
     await expect(canvas).toHaveAttribute("data-monster-visual-architecture", "humanoid-sprite-v1");
     await expect(canvas).toHaveAttribute("data-monster-visual-states", /.+/);
     const screenshotPath = testInfo.outputPath(`level-${level}-campaign.png`);
     await page.screenshot({ path: screenshotPath, animations: "disabled" });
     await testInfo.attach(`level-${level}-campaign`, { path: screenshotPath, contentType: "image/png" });
   }
+  expect(browserErrors).toEqual([]);
 });
 
 test("Eldrin progression and Q/E/R targeting persist and remain cancellable", async ({ page }) => {

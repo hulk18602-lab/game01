@@ -1,1 +1,3164 @@
-{"schemaVersion":1,"id":"tank","placeholder":true,"license":"Project-generated temporary placeholder","atlas":{"file":"atlas-placeholder.png","width":1402,"height":1122,"columns":4,"rows":5,"frameWidth":350.5,"frameHeight":224.4},"animations":{"idle":[0,1,2,3],"walk":[4,5,6,7],"attack":[8,9,10,11],"hit":[12,13,14,15],"death":[16,17,18,19]},"directions":["up","down","left","right"],"directionPolicy":"right-facing source; left mirrored; up/down reusable placeholder","anchor":{"x":0.5,"y":0.9}}
+{
+  "schemaVersion": 2,
+  "id": "tank",
+  "placeholder": true,
+  "license": "Project-generated temporary placeholder",
+  "atlas": {
+    "file": "atlas-placeholder.png",
+    "width": 1420,
+    "height": 1145,
+    "columns": 4,
+    "rows": 5,
+    "frameWidth": 355,
+    "frameHeight": 229,
+    "contentWidth": 351,
+    "contentHeight": 225,
+    "padding": 2
+  },
+  "animations": {
+    "idle": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "walk": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "attack": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "hit": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "death": [
+      16,
+      17,
+      18,
+      19
+    ]
+  },
+  "directions": [
+    "up",
+    "down",
+    "left",
+    "right"
+  ],
+  "directionPolicy": "right-facing source; left mirrored; up/down reusable placeholder",
+  "anchor": {
+    "x": 0.5,
+    "y": 0.9
+  },
+  "source": {
+    "file": "atlas-source-placeholder.png",
+    "width": 1402,
+    "height": 1122,
+    "extraction": "rounded proportional boundaries; centered horizontally and bottom-aligned; per-frame alpha connected-component cleanup"
+  },
+  "componentCleanup": {
+    "alphaThreshold": 8,
+    "minimumComponentArea": 4,
+    "maximumComponentGap": 12,
+    "boundaryMargin": 1,
+    "perFrameOverrides": {},
+    "connectivity": 8,
+    "mainComponentSelection": "alpha area + center/body/anchor-zone score",
+    "frameReports": [
+      {
+        "frame": 0,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 26522,
+            "area": 26522,
+            "bounds": [
+              81,
+              30,
+              344,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 1,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 25721,
+            "area": 25721,
+            "bounds": [
+              69,
+              33,
+              324,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 2,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 25525,
+            "area": 25525,
+            "bounds": [
+              55,
+              40,
+              312,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 3,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 25672,
+            "area": 25672,
+            "bounds": [
+              33,
+              42,
+              291,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 4,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 21060,
+            "area": 21060,
+            "bounds": [
+              111,
+              53,
+              341,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              187,
+              53,
+              187,
+              53
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1057,
+            "area": 1057,
+            "bounds": [
+              204,
+              0,
+              264,
+              20
+            ],
+            "gapToMain": 32,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 1026,
+            "area": 1026,
+            "bounds": [
+              128,
+              0,
+              171,
+              25
+            ],
+            "gapToMain": 27,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 5,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9998,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 20640,
+            "area": 20640,
+            "bounds": [
+              84,
+              52,
+              312,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              232,
+              224,
+              235,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1005,
+            "area": 1005,
+            "bounds": [
+              99,
+              0,
+              142,
+              24
+            ],
+            "gapToMain": 27,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 984,
+            "area": 984,
+            "bounds": [
+              191,
+              0,
+              248,
+              19
+            ],
+            "gapToMain": 32,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 6,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19950,
+            "area": 19950,
+            "bounds": [
+              58,
+              55,
+              290,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1188,
+            "area": 1188,
+            "bounds": [
+              180,
+              0,
+              237,
+              25
+            ],
+            "gapToMain": 29,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 1111,
+            "area": 1111,
+            "bounds": [
+              82,
+              0,
+              127,
+              27
+            ],
+            "gapToMain": 27,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 3,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              163,
+              0,
+              166,
+              3
+            ],
+            "gapToMain": 51,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 4,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              137,
+              0,
+              139,
+              1
+            ],
+            "gapToMain": 53,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 5,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              133,
+              0,
+              135,
+              1
+            ],
+            "gapToMain": 53,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 7,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19514,
+            "area": 19514,
+            "bounds": [
+              42,
+              54,
+              269,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1264,
+            "area": 1264,
+            "bounds": [
+              154,
+              0,
+              211,
+              27
+            ],
+            "gapToMain": 26,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 1259,
+            "area": 1259,
+            "bounds": [
+              57,
+              0,
+              119,
+              29
+            ],
+            "gapToMain": 24,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 3,
+            "alphaArea": 14,
+            "area": 14,
+            "bounds": [
+              141,
+              0,
+              145,
+              5
+            ],
+            "gapToMain": 48,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 4,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              126,
+              0,
+              127,
+              2
+            ],
+            "gapToMain": 51,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 8,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 20466,
+            "area": 20466,
+            "bounds": [
+              48,
+              30,
+              260,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1173,
+            "area": 1173,
+            "bounds": [
+              210,
+              1,
+              272,
+              23
+            ],
+            "gapToMain": 6,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 632,
+            "area": 632,
+            "bounds": [
+              124,
+              1,
+              165,
+              21
+            ],
+            "gapToMain": 8,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary"
+            ]
+          },
+          {
+            "index": 3,
+            "alphaArea": 371,
+            "area": 371,
+            "bounds": [
+              334,
+              101,
+              350,
+              144
+            ],
+            "gapToMain": 73,
+            "reasons": [
+              "detached at neighboring source-cell side",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 9,
+        "mainComponent": 0,
+        "mainAlphaShare": 1,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 25374,
+            "area": 25374,
+            "bounds": [
+              0,
+              42,
+              289,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1141,
+            "area": 1141,
+            "bounds": [
+              184,
+              1,
+              245,
+              23
+            ],
+            "gapToMain": 18,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 463,
+            "area": 463,
+            "bounds": [
+              106,
+              1,
+              137,
+              21
+            ],
+            "gapToMain": 20,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 10,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9985,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 21789,
+            "area": 21789,
+            "bounds": [
+              60,
+              72,
+              340,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 18,
+            "area": 18,
+            "bounds": [
+              58,
+              179,
+              63,
+              185
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 12,
+            "area": 12,
+            "bounds": [
+              59,
+              138,
+              65,
+              145
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              179,
+              70,
+              179,
+              70
+            ],
+            "gapToMain": 1,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              61,
+              202,
+              61,
+              202
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1145,
+            "area": 1145,
+            "bounds": [
+              168,
+              1,
+              231,
+              24
+            ],
+            "gapToMain": 47,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 617,
+            "area": 617,
+            "bounds": [
+              63,
+              1,
+              102,
+              24
+            ],
+            "gapToMain": 47,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 7,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              135,
+              1,
+              135,
+              1
+            ],
+            "gapToMain": 70,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 11,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9979,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 20298,
+            "area": 20298,
+            "bounds": [
+              36,
+              74,
+              309,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 18,
+            "area": 18,
+            "bounds": [
+              29,
+              197,
+              33,
+              203
+            ],
+            "gapToMain": 2,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 16,
+            "area": 16,
+            "bounds": [
+              21,
+              167,
+              25,
+              173
+            ],
+            "gapToMain": 10,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              33,
+              208,
+              34,
+              210
+            ],
+            "gapToMain": 1,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              233,
+              223,
+              233,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              302,
+              189,
+              302,
+              189
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1251,
+            "area": 1251,
+            "bounds": [
+              134,
+              1,
+              193,
+              25
+            ],
+            "gapToMain": 48,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 563,
+            "area": 563,
+            "bounds": [
+              48,
+              1,
+              84,
+              24
+            ],
+            "gapToMain": 49,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 3,
+            "alphaArea": 87,
+            "area": 87,
+            "bounds": [
+              6,
+              183,
+              14,
+              197
+            ],
+            "gapToMain": 21,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 8,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              18,
+              215,
+              18,
+              216
+            ],
+            "gapToMain": 17,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 12,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9904,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 16554,
+            "area": 16554,
+            "bounds": [
+              93,
+              53,
+              258,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 23,
+            "area": 23,
+            "bounds": [
+              205,
+              88,
+              211,
+              94
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 21,
+            "area": 21,
+            "bounds": [
+              237,
+              67,
+              241,
+              73
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 19,
+            "area": 19,
+            "bounds": [
+              224,
+              123,
+              229,
+              128
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 16,
+            "area": 16,
+            "bounds": [
+              101,
+              140,
+              105,
+              145
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 15,
+            "area": 15,
+            "bounds": [
+              79,
+              145,
+              83,
+              150
+            ],
+            "gapToMain": 9,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 15,
+            "area": 15,
+            "bounds": [
+              95,
+              81,
+              99,
+              85
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 10,
+            "area": 10,
+            "bounds": [
+              242,
+              83,
+              246,
+              86
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              91,
+              122,
+              94,
+              124
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              212,
+              66,
+              214,
+              69
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 12,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              77,
+              115,
+              80,
+              116
+            ],
+            "gapToMain": 12,
+            "reasons": []
+          },
+          {
+            "index": 13,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              224,
+              78,
+              226,
+              80
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 14,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              214,
+              98,
+              216,
+              99
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 15,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              234,
+              104,
+              236,
+              105
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 16,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              112,
+              62,
+              113,
+              63
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 18,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              230,
+              117,
+              231,
+              117
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 19,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              239,
+              138,
+              239,
+              138
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 20,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              258,
+              138,
+              258,
+              138
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1814,
+            "area": 1814,
+            "bounds": [
+              98,
+              0,
+              209,
+              30
+            ],
+            "gapToMain": 22,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 1285,
+            "area": 1285,
+            "bounds": [
+              220,
+              0,
+              279,
+              27
+            ],
+            "gapToMain": 25,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 17,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              85,
+              89,
+              86,
+              90
+            ],
+            "gapToMain": 6,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 13,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9952,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 17258,
+            "area": 17258,
+            "bounds": [
+              108,
+              53,
+              269,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 18,
+            "area": 18,
+            "bounds": [
+              93,
+              123,
+              98,
+              127
+            ],
+            "gapToMain": 9,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 15,
+            "area": 15,
+            "bounds": [
+              111,
+              140,
+              115,
+              144
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 15,
+            "area": 15,
+            "bounds": [
+              256,
+              109,
+              261,
+              112
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 11,
+            "area": 11,
+            "bounds": [
+              245,
+              97,
+              249,
+              99
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 11,
+            "area": 11,
+            "bounds": [
+              98,
+              88,
+              102,
+              91
+            ],
+            "gapToMain": 5,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              141,
+              151,
+              143,
+              154
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              110,
+              76,
+              111,
+              78
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 12,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              262,
+              143,
+              262,
+              143
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 13,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              232,
+              72,
+              232,
+              72
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 14,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              270,
+              107,
+              270,
+              107
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1752,
+            "area": 1752,
+            "bounds": [
+              94,
+              0,
+              205,
+              31
+            ],
+            "gapToMain": 21,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 1312,
+            "area": 1312,
+            "bounds": [
+              215,
+              0,
+              273,
+              28
+            ],
+            "gapToMain": 24,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 9,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              74,
+              84,
+              78,
+              85
+            ],
+            "gapToMain": 29,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 11,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              95,
+              111,
+              96,
+              111
+            ],
+            "gapToMain": 11,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 14,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9961,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 15922,
+            "area": 15922,
+            "bounds": [
+              103,
+              58,
+              257,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 20,
+            "area": 20,
+            "bounds": [
+              91,
+              120,
+              97,
+              123
+            ],
+            "gapToMain": 5,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 14,
+            "area": 14,
+            "bounds": [
+              96,
+              131,
+              100,
+              136
+            ],
+            "gapToMain": 2,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              117,
+              138,
+              120,
+              141
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 15,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              131,
+              143,
+              133,
+              145
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 18,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              108,
+              124,
+              110,
+              126
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 19,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              104,
+              114,
+              105,
+              115
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 22,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              105,
+              153,
+              106,
+              154
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 23,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              121,
+              118,
+              122,
+              119
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 24,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              103,
+              63,
+              103,
+              64
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 1653,
+            "area": 1653,
+            "bounds": [
+              256,
+              0,
+              330,
+              29
+            ],
+            "gapToMain": 28,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 1310,
+            "area": 1310,
+            "bounds": [
+              52,
+              0,
+              113,
+              29
+            ],
+            "gapToMain": 28,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 3,
+            "alphaArea": 1246,
+            "area": 1246,
+            "bounds": [
+              188,
+              0,
+              246,
+              27
+            ],
+            "gapToMain": 30,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 4,
+            "alphaArea": 157,
+            "area": 157,
+            "bounds": [
+              135,
+              0,
+              161,
+              13
+            ],
+            "gapToMain": 44,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 5,
+            "alphaArea": 67,
+            "area": 67,
+            "bounds": [
+              333,
+              19,
+              346,
+              25
+            ],
+            "gapToMain": 82,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 6,
+            "alphaArea": 41,
+            "area": 41,
+            "bounds": [
+              162,
+              0,
+              171,
+              9
+            ],
+            "gapToMain": 48,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 7,
+            "alphaArea": 31,
+            "area": 31,
+            "bounds": [
+              120,
+              0,
+              129,
+              5
+            ],
+            "gapToMain": 52,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 10,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              261,
+              12,
+              264,
+              14
+            ],
+            "gapToMain": 43,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 12,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              347,
+              10,
+              350,
+              12
+            ],
+            "gapToMain": 100,
+            "reasons": [
+              "detached at neighboring source-cell side",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 13,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              114,
+              0,
+              118,
+              4
+            ],
+            "gapToMain": 53,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 14,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              64,
+              74,
+              70,
+              77
+            ],
+            "gapToMain": 32,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 16,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              130,
+              0,
+              134,
+              2
+            ],
+            "gapToMain": 55,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 17,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              255,
+              1,
+              258,
+              4
+            ],
+            "gapToMain": 53,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 20,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              87,
+              94,
+              89,
+              95
+            ],
+            "gapToMain": 13,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 21,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              137,
+              0,
+              139,
+              0
+            ],
+            "gapToMain": 57,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 25,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              97,
+              106,
+              98,
+              106
+            ],
+            "gapToMain": 4,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 26,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              82,
+              87,
+              83,
+              88
+            ],
+            "gapToMain": 19,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 15,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9995,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19271,
+            "area": 19271,
+            "bounds": [
+              15,
+              67,
+              220,
+              224
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              28,
+              88,
+              33,
+              90
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 15,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              82,
+              70,
+              83,
+              71
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 2084,
+            "area": 2084,
+            "bounds": [
+              24,
+              0,
+              142,
+              32
+            ],
+            "gapToMain": 34,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 1656,
+            "area": 1656,
+            "bounds": [
+              220,
+              0,
+              303,
+              32
+            ],
+            "gapToMain": 34,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 3,
+            "alphaArea": 1333,
+            "area": 1333,
+            "bounds": [
+              148,
+              0,
+              204,
+              28
+            ],
+            "gapToMain": 38,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 4,
+            "alphaArea": 73,
+            "area": 73,
+            "bounds": [
+              297,
+              22,
+              311,
+              28
+            ],
+            "gapToMain": 85,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 5,
+            "alphaArea": 25,
+            "area": 25,
+            "bounds": [
+              287,
+              21,
+              293,
+              25
+            ],
+            "gapToMain": 78,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 6,
+            "alphaArea": 20,
+            "area": 20,
+            "bounds": [
+              210,
+              27,
+              219,
+              29
+            ],
+            "gapToMain": 37,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 7,
+            "alphaArea": 14,
+            "area": 14,
+            "bounds": [
+              214,
+              13,
+              218,
+              16
+            ],
+            "gapToMain": 50,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 8,
+            "alphaArea": 13,
+            "area": 13,
+            "bounds": [
+              206,
+              1,
+              210,
+              5
+            ],
+            "gapToMain": 61,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 9,
+            "alphaArea": 11,
+            "area": 11,
+            "bounds": [
+              315,
+              3,
+              318,
+              6
+            ],
+            "gapToMain": 112,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 10,
+            "alphaArea": 10,
+            "area": 10,
+            "bounds": [
+              225,
+              6,
+              228,
+              10
+            ],
+            "gapToMain": 56,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 12,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              251,
+              30,
+              253,
+              31
+            ],
+            "gapToMain": 46,
+            "reasons": [
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 13,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              295,
+              29,
+              296,
+              30
+            ],
+            "gapToMain": 82,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 14,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              305,
+              30,
+              307,
+              30
+            ],
+            "gapToMain": 91,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 16,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              144,
+              0,
+              145,
+              0
+            ],
+            "gapToMain": 66,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 17,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              8,
+              10,
+              9,
+              10
+            ],
+            "gapToMain": 56,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 18,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              243,
+              8,
+              243,
+              8
+            ],
+            "gapToMain": 62,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 19,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              288,
+              30,
+              288,
+              30
+            ],
+            "gapToMain": 76,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 20,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              316,
+              28,
+              316,
+              28
+            ],
+            "gapToMain": 102,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 16,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9752,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19189,
+            "area": 19189,
+            "bounds": [
+              29,
+              43,
+              303,
+              192
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 66,
+            "area": 66,
+            "bounds": [
+              218,
+              182,
+              234,
+              187
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 70,
+            "area": 70,
+            "bounds": [
+              283,
+              178,
+              298,
+              184
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 45,
+            "area": 45,
+            "bounds": [
+              207,
+              84,
+              215,
+              94
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 36,
+            "area": 36,
+            "bounds": [
+              204,
+              64,
+              211,
+              71
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 34,
+            "area": 34,
+            "bounds": [
+              69,
+              183,
+              79,
+              187
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 37,
+            "area": 37,
+            "bounds": [
+              66,
+              133,
+              76,
+              138
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 26,
+            "area": 26,
+            "bounds": [
+              231,
+              176,
+              238,
+              180
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 23,
+            "area": 23,
+            "bounds": [
+              28,
+              106,
+              34,
+              111
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 16,
+            "area": 16,
+            "bounds": [
+              98,
+              186,
+              105,
+              189
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 12,
+            "alphaArea": 17,
+            "area": 17,
+            "bounds": [
+              284,
+              114,
+              288,
+              119
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 13,
+            "alphaArea": 10,
+            "area": 10,
+            "bounds": [
+              189,
+              65,
+              191,
+              70
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 14,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              113,
+              168,
+              116,
+              170
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 15,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              237,
+              169,
+              240,
+              172
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 16,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              191,
+              86,
+              193,
+              90
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 17,
+            "alphaArea": 10,
+            "area": 10,
+            "bounds": [
+              281,
+              141,
+              285,
+              143
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 18,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              264,
+              100,
+              267,
+              102
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 19,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              64,
+              92,
+              66,
+              94
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 20,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              180,
+              189,
+              182,
+              190
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 21,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              110,
+              191,
+              113,
+              192
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 22,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              48,
+              126,
+              50,
+              128
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 23,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              238,
+              93,
+              240,
+              95
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 24,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              307,
+              173,
+              309,
+              174
+            ],
+            "gapToMain": 3,
+            "reasons": []
+          },
+          {
+            "index": 25,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              295,
+              189,
+              298,
+              189
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 26,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              296,
+              147,
+              298,
+              148
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 27,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              208,
+              100,
+              209,
+              101
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 28,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              220,
+              106,
+              221,
+              107
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 29,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              53,
+              187,
+              55,
+              187
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 30,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              184,
+              190,
+              185,
+              190
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 31,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              301,
+              189,
+              302,
+              189
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 32,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              33,
+              182,
+              34,
+              182
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 33,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              240,
+              187,
+              240,
+              187
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 34,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              102,
+              164,
+              102,
+              164
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 35,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              81,
+              142,
+              81,
+              142
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 36,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              197,
+              94,
+              197,
+              94
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 37,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              223,
+              91,
+              223,
+              91
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 38,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              288,
+              129,
+              288,
+              129
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 40,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              42,
+              97,
+              42,
+              97
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 272,
+            "area": 272,
+            "bounds": [
+              98,
+              1,
+              135,
+              8
+            ],
+            "gapToMain": 34,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 257,
+            "area": 257,
+            "bounds": [
+              206,
+              1,
+              259,
+              6
+            ],
+            "gapToMain": 36,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 39,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              307,
+              167,
+              307,
+              167
+            ],
+            "gapToMain": 3,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 41,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              313,
+              105,
+              313,
+              105
+            ],
+            "gapToMain": 9,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 17,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9891,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18381,
+            "area": 18381,
+            "bounds": [
+              6,
+              64,
+              285,
+              194
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 95,
+            "area": 95,
+            "bounds": [
+              62,
+              181,
+              78,
+              189
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 40,
+            "area": 40,
+            "bounds": [
+              84,
+              150,
+              90,
+              158
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 26,
+            "area": 26,
+            "bounds": [
+              56,
+              176,
+              64,
+              179
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 22,
+            "area": 22,
+            "bounds": [
+              74,
+              135,
+              80,
+              138
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 14,
+            "area": 14,
+            "bounds": [
+              86,
+              181,
+              91,
+              183
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              97,
+              161,
+              99,
+              161
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              172,
+              187,
+              173,
+              187
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 324,
+            "area": 324,
+            "bounds": [
+              217,
+              1,
+              271,
+              7
+            ],
+            "gapToMain": 56,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 319,
+            "area": 319,
+            "bounds": [
+              109,
+              1,
+              147,
+              9
+            ],
+            "gapToMain": 54,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 8,
+            "alphaArea": 10,
+            "area": 10,
+            "bounds": [
+              348,
+              159,
+              349,
+              165
+            ],
+            "gapToMain": 62,
+            "reasons": [
+              "detached at neighboring source-cell side",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 9,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              348,
+              167,
+              349,
+              171
+            ],
+            "gapToMain": 62,
+            "reasons": [
+              "detached at neighboring source-cell side",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 18,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9993,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18962,
+            "area": 18962,
+            "bounds": [
+              0,
+              84,
+              288,
+              198
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              65,
+              140,
+              67,
+              142
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              49,
+              123,
+              50,
+              124
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              79,
+              188,
+              81,
+              188
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 419,
+            "area": 419,
+            "bounds": [
+              104,
+              1,
+              147,
+              11
+            ],
+            "gapToMain": 72,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 411,
+            "area": 411,
+            "bounds": [
+              204,
+              1,
+              260,
+              8
+            ],
+            "gapToMain": 75,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 3,
+            "alphaArea": 30,
+            "area": 30,
+            "bounds": [
+              342,
+              191,
+              350,
+              196
+            ],
+            "gapToMain": 53,
+            "reasons": [
+              "detached at neighboring source-cell side",
+              "small component beyond maximum gap"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 19,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.991,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 16548,
+            "area": 16548,
+            "bounds": [
+              1,
+              119,
+              307,
+              204
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 104,
+            "area": 104,
+            "bounds": [
+              53,
+              192,
+              69,
+              200
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 26,
+            "area": 26,
+            "bounds": [
+              305,
+              178,
+              311,
+              183
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              310,
+              192,
+              315,
+              194
+            ],
+            "gapToMain": 2,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              0,
+              193,
+              2,
+              195
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              47,
+              192,
+              48,
+              192
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              38,
+              197,
+              39,
+              197
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              279,
+              193,
+              279,
+              193
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 1,
+            "alphaArea": 531,
+            "area": 531,
+            "bounds": [
+              37,
+              1,
+              76,
+              15
+            ],
+            "gapToMain": 103,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 2,
+            "alphaArea": 491,
+            "area": 491,
+            "bounds": [
+              126,
+              1,
+              175,
+              11
+            ],
+            "gapToMain": 107,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap"
+            ]
+          },
+          {
+            "index": 7,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              103,
+              1,
+              104,
+              2
+            ],
+            "gapToMain": 116,
+            "reasons": [
+              "detached above main silhouette at source-cell boundary",
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 10,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              314,
+              186,
+              314,
+              187
+            ],
+            "gapToMain": 6,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 12,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              322,
+              187,
+              322,
+              187
+            ],
+            "gapToMain": 14,
+            "reasons": [
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

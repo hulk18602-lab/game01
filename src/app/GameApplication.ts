@@ -9,6 +9,7 @@ import type { EnemyEntity, ProjectileEntity } from "../game/CampaignSession.js";
 import type { GameSpeed } from "../game/GameFlow.js";
 import { GameStorage } from "../game/persistence/GameStorage.js";
 import type { RuntimeTower } from "../game/index.js";
+import type { MonsterAtlasDiagnostic } from "../rendering/monsters/MonsterAssetLoader.js";
 import { KeyboardInputAdapter } from "../input/index.js";
 import type { UiCommand } from "../ui/index.js";
 import { isGameplayPhase } from "./createUiSelectors.js";
@@ -46,6 +47,7 @@ interface GameDebugApi {
   readonly reducedMotion: boolean;
   readonly activeEffects: number;
   readonly selectedHeroAbility: string | null;
+  readonly monsterAtlases: readonly MonsterAtlasDiagnostic[];
   readonly towerRenderer: {
     readonly mode: "detailed" | "fallback";
     readonly renderedTowerCount: number;
@@ -55,6 +57,8 @@ interface GameDebugApi {
   damageEnemy(id: string, amount: number): boolean;
   grantHeroXp(amount: number): number;
   spawnEnemy(type: string, progress?: number): string;
+  renderMonsterFrame(frame: number | null): void;
+  clearPresentationEffects(): void;
   completeLevel(): void;
   readonly hero: {
     readonly id: string;
@@ -394,6 +398,7 @@ export class GameApplication {
       get reducedMotion() { return application.#runtime.session.getState().reducedMotion; },
       get activeEffects() { return application.#runtime.session.getState().effects.length; },
       get selectedHeroAbility() { return application.#runtime.session.getState().selectedHeroAbility; },
+      get monsterAtlases() { return application.#runtime.monsterAtlasDiagnostics; },
       get towerRenderer() { return application.#runtime.towerRendererDiagnostics; },
       setGold(amount: number) {
         if (!Number.isFinite(amount) || amount < 0) return false;
@@ -411,6 +416,13 @@ export class GameApplication {
       },
       spawnEnemy(type: string, progress?: number) {
         return application.#runtime.session.debugSpawnEnemy(type, progress).id;
+      },
+      renderMonsterFrame(frame: number | null) {
+        if (frame !== null && (!Number.isInteger(frame) || frame < 0 || frame >= 20)) return;
+        application.#runtime.renderMonsterFrameForDebug(frame);
+      },
+      clearPresentationEffects() {
+        application.#runtime.session.debugClearPresentationEffects();
       },
       completeLevel() {
         application.#runtime.session.debugCompleteLevel();
