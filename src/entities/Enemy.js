@@ -26,6 +26,34 @@ export class Enemy {
     this.baseDamage = overrides.baseDamage ?? definition.baseDamage;
     this.armor = overrides.armor ?? definition.armor ?? 0;
     this.regeneration = overrides.regeneration ?? definition.regeneration ?? 0;
+    this.coldResistance = overrides.coldResistance ?? definition.coldResistance ?? 0;
+    this.enrageThreshold = overrides.enrageThreshold ?? definition.enrageThreshold ?? 0;
+    this.enrageSpeed = overrides.enrageSpeed ?? definition.enrageSpeed ?? 1;
+    this.enraged = overrides.enraged ?? false;
+    this.speedAura = overrides.speedAura ?? definition.speedAura ?? 1;
+    this.auraRadius = overrides.auraRadius ?? definition.auraRadius ?? 0;
+    this.healAmount = overrides.healAmount ?? definition.healAmount ?? 0;
+    this.healCooldown = overrides.healCooldown ?? definition.healCooldown ?? 0;
+    this.healRadius = overrides.healRadius ?? definition.healRadius ?? 0;
+    this.abilityCooldown = overrides.abilityCooldown ?? definition.summonDelay ?? 0;
+    this.phaseInterval = overrides.phaseInterval ?? definition.phaseInterval ?? 0;
+    this.phaseDuration = overrides.phaseDuration ?? definition.phaseDuration ?? 0;
+    this.phaseCooldown = overrides.phaseCooldown ?? this.phaseInterval;
+    this.phaseRemaining = overrides.phaseRemaining ?? 0;
+    this.targetable = overrides.targetable ?? true;
+    this.summonInto = overrides.summonInto ?? definition.summonInto ?? null;
+    this.summonCount = overrides.summonCount ?? definition.summonCount ?? 0;
+    this.summonDelay = overrides.summonDelay ?? definition.summonDelay ?? 0;
+    this.summonThreshold = overrides.summonThreshold ?? definition.summonThreshold ?? 1;
+    this.summonProcessed = overrides.summonProcessed ?? false;
+    this.minion = overrides.minion ?? definition.minion ?? false;
+    this.towerDebuff = overrides.towerDebuff ?? definition.towerDebuff ?? 1;
+    this.debuffDuration = overrides.debuffDuration ?? definition.debuffDuration ?? 0;
+    this.debuffCooldown = overrides.debuffCooldown ?? definition.debuffCooldown ?? 0;
+    this.debuffRadius = overrides.debuffRadius ?? definition.debuffRadius ?? 0;
+    this.debuffTimer = overrides.debuffTimer ?? 0;
+    this.huntersMarked = false;
+    this.huntersMarkTowerBonus = 0;
     this.boss = overrides.boss ?? definition.boss ?? false;
     this.elite = overrides.elite ?? definition.elite ?? false;
     this.bossPhase = overrides.bossPhase ?? 1;
@@ -33,6 +61,7 @@ export class Enemy {
     this.position = { ...(overrides.position ?? { x: 0, y: 0 }) };
     this.speedMultiplier = 1;
     this.abilitySpeedMultiplier = 1;
+    this.supportSpeedMultiplier = 1;
     this.statusEffects = [...(overrides.statusEffects ?? [])];
     this.damageContributors = new Map(overrides.damageContributors ?? []);
     this.dead = false;
@@ -51,7 +80,9 @@ export class Enemy {
       remaining -= absorbed;
       if (remaining <= 0) return this.health;
     }
-    const armorEffect = damageType === 'physical'
+    const armorEffect = damageType === 'cold'
+      ? this.coldResistance
+      : damageType === 'physical'
       ? this.armor
       : damageType === 'explosive'
         ? this.armor * 0.35

@@ -29,6 +29,8 @@ export interface RuntimeTower {
   readonly label: string;
   cooldown?: number;
   targetId?: string | null;
+  debuffMultiplier?: number;
+  debuffRemaining?: number;
 }
 
 export interface RuntimeTowerDefinition {

@@ -59,6 +59,56 @@ export const enemyTypes = Object.freeze({
     health: 6200, shield: 1500, speed: 25, reward: 600, baseDamage: 12, armor: 0.25,
     color: "#e879f9", radius: 28,
   }),
+  berserker: defineEnemy({
+    id: "berserker", name: "Berserker", shortLabel: "Br", health: 430, speed: 66,
+    reward: 48, baseDamage: 4, armor: 0.08, enrageThreshold: 0.4, enrageSpeed: 1.3,
+    color: "#dc2626", radius: 16,
+  }),
+  warBannerCaptain: defineEnemy({
+    id: "warBannerCaptain", name: "War Banner Captain", shortLabel: "C", health: 680, speed: 45,
+    reward: 76, baseDamage: 5, armor: 0.22, speedAura: 1.15, auraRadius: 130,
+    color: "#b45309", radius: 19,
+  }),
+  frostboundKnight: defineEnemy({
+    id: "frostboundKnight", name: "Frostbound Knight", shortLabel: "K", health: 820, shield: 280,
+    speed: 34, reward: 92, baseDamage: 6, armor: 0.34, coldResistance: 0.55,
+    color: "#60a5fa", radius: 20,
+  }),
+  iceShaman: defineEnemy({
+    id: "iceShaman", name: "Ice Shaman", shortLabel: "I", health: 390, speed: 48,
+    reward: 70, baseDamage: 3, armor: 0.05, healAmount: 85, healCooldown: 5.5, healRadius: 165,
+    color: "#22d3ee", radius: 16,
+  }),
+  shadowAssassin: defineEnemy({
+    id: "shadowAssassin", name: "Shadow Assassin", shortLabel: "Sa", health: 360, speed: 108,
+    reward: 72, baseDamage: 5, armor: 0.08, phaseInterval: 5.5, phaseDuration: 1.1,
+    color: "#7c3aed", radius: 14,
+  }),
+  shadowMinion: defineEnemy({
+    id: "shadowMinion", name: "Bound Shade", shortLabel: "M", health: 95, speed: 82,
+    reward: 6, baseDamage: 1, armor: 0, minion: true, color: "#64748b", radius: 11,
+  }),
+  necromancer: defineEnemy({
+    id: "necromancer", name: "Necromancer", shortLabel: "N", health: 620, speed: 42,
+    reward: 96, baseDamage: 4, armor: 0.12, summonInto: "shadowMinion", summonCount: 4, summonDelay: 4.5,
+    color: "#6d28d9", radius: 18,
+  }),
+  dreadPaladin: defineEnemy({
+    id: "dreadPaladin", name: "Dread Paladin", shortLabel: "P", health: 1450, shield: 520,
+    speed: 29, reward: 145, baseDamage: 9, armor: 0.42, regeneration: 5,
+    color: "#4c1d95", radius: 22,
+  }),
+  voidWarlock: defineEnemy({
+    id: "voidWarlock", name: "Void Warlock", shortLabel: "V", health: 720, speed: 40,
+    reward: 108, baseDamage: 5, armor: 0.1, towerDebuff: 0.72, debuffDuration: 4.5,
+    debuffCooldown: 7, debuffRadius: 190, color: "#a855f7", radius: 18,
+  }),
+  eclipseKing: defineEnemy({
+    id: "eclipseKing", name: "The Eclipse King", shortLabel: "EK", elite: true, boss: true,
+    health: 12800, shield: 3200, speed: 22, reward: 1400, baseDamage: 20, armor: 0.36,
+    summonInto: "shadowMinion", summonCount: 8, summonThreshold: 0.66,
+    enrageThreshold: 0.33, enrageSpeed: 1.5, color: "#c026d3", radius: 34,
+  }),
 });
 
 export default enemyTypes;

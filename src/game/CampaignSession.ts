@@ -7,6 +7,8 @@ import {
 import enemyTypes from "../content/enemies/enemyTypes.js";
 import {
   heroSkillDefinitions,
+  isActiveHeroSkillId,
+  type ActiveHeroSkillId,
   type HeroSkillId,
   type HeroSkillLevels,
 } from "../content/heroes/heroSkills.js";
@@ -171,6 +173,35 @@ export interface EnemyEntity {
   position: { x: number; y: number };
   speedMultiplier: number;
   abilitySpeedMultiplier: number;
+  supportSpeedMultiplier: number;
+  readonly coldResistance: number;
+  readonly enrageThreshold: number;
+  readonly enrageSpeed: number;
+  enraged: boolean;
+  readonly speedAura: number;
+  readonly auraRadius: number;
+  readonly healAmount: number;
+  readonly healCooldown: number;
+  readonly healRadius: number;
+  abilityCooldown: number;
+  readonly phaseInterval: number;
+  readonly phaseDuration: number;
+  phaseCooldown: number;
+  phaseRemaining: number;
+  targetable: boolean;
+  readonly summonInto: string | null;
+  readonly summonCount: number;
+  readonly summonDelay: number;
+  readonly summonThreshold: number;
+  summonProcessed: boolean;
+  readonly minion: boolean;
+  readonly towerDebuff: number;
+  readonly debuffDuration: number;
+  readonly debuffCooldown: number;
+  readonly debuffRadius: number;
+  debuffTimer: number;
+  huntersMarked: boolean;
+  huntersMarkTowerBonus: number;
   statusEffects: StatusEffect[];
   damageContributors: Map<string, number>;
   lastDamageSourceId?: string;
@@ -234,6 +265,8 @@ export interface CampaignRuntime extends GameState {
   runtimeTowers: RuntimeTower[];
   hero: HeroEntity | null;
   selectedHeroId: string | null;
+  selectedHeroAbility: ActiveHeroSkillId | null;
+  heroAbilityPreview: { readonly type: ActiveHeroSkillId; readonly position: Position; readonly radius: number; readonly valid: boolean } | null;
   effects: VisualEffect[];
   screenShake: number;
   reducedMotion: boolean;
@@ -265,6 +298,9 @@ export interface PresentationCue {
     | "hit"
     | "enemy-death"
     | "boss-phase"
+    | "enemy-heal"
+    | "enemy-enrage"
+    | "enemy-summon"
     | "build"
     | "upgrade"
     | "sell"
@@ -751,7 +787,11 @@ export class CampaignSession {
   }
 
   cancelAction(): void {
-    if (this.#state.selectedBuildType) {
+    if (this.#state.selectedHeroAbility) {
+      this.#state.selectedHeroAbility = null;
+      this.#state.heroAbilityPreview = null;
+      this.#showMessage("Ability targeting cancelled.", "info");
+    } else if (this.#state.selectedBuildType) {
       this.#state.selectedBuildType = null;
       this.#state.placementPreview = null;
       this.#showMessage("Building cancelled.", "info");
@@ -766,10 +806,12 @@ export class CampaignSession {
     if (!point) {
       this.#state.placementPreview = null;
       this.#state.hoveredEnemyId = null;
+      this.#state.heroAbilityPreview = null;
       this.#emit();
       return;
     }
     this.#refreshPlacementPreview(point);
+    this.#refreshHeroAbilityPreview(point);
     if (!this.#state.selectedBuildType) {
       this.#state.hoveredEnemyId = this.#enemyAt(point)?.id ?? null;
     }
@@ -778,6 +820,10 @@ export class CampaignSession {
 
   handleBattlefieldClick(point: Position): void {
     if (this.flow.phase !== "preparing" && this.flow.phase !== "wave") return;
+    if (this.#state.selectedHeroAbility) {
+      this.#confirmHeroAbility(point);
+      return;
+    }
     if (this.#state.selectedBuildType) {
       this.placeSelectedTower(point);
       return;
@@ -827,6 +873,51 @@ export class CampaignSession {
       "success",
     );
     this.#saveGame();
+    this.#emit();
+  }
+
+  selectHeroAbility(skillId: ActiveHeroSkillId): void {
+    if (!isActiveHeroSkillId(skillId)) throw new CommandValidationError("Unknown active hero ability.");
+    const hero = this.#state.hero;
+    if (!hero) throw new CommandValidationError("This level has no controllable hero.");
+    if (hero.skills[skillId] <= 0) throw new CommandValidationError(`${heroSkillDefinitions[skillId].name} is not learned.`);
+    if (hero.abilityCooldowns[skillId] > 0) throw new CommandValidationError(`${heroSkillDefinitions[skillId].name} is cooling down.`);
+    if ((skillId === "rainOfArrows" || skillId === "huntersMark") && this.flow.phase !== "wave") {
+      throw new CommandValidationError("That ability requires an active wave.");
+    }
+    this.#state.selectedBuildType = null;
+    this.#state.placementPreview = null;
+    this.#state.selectedHeroAbility = skillId;
+    this.#showMessage(`${heroSkillDefinitions[skillId].name}: choose a target with left click.`, "info");
+    this.#emit();
+  }
+
+  /** Development-only shortcut used by deterministic browser smoke scenarios. */
+  debugGrantHeroXp(amount: number): number {
+    const hero = this.#state.hero;
+    if (!hero) throw new CommandValidationError("This level has no controllable hero.");
+    const levels = hero.gainXp(amount);
+    this.#saveGame();
+    this.#emit();
+    return levels;
+  }
+
+  /** Development-only spawn that still uses the level catalog and canonical enemy factory. */
+  debugSpawnEnemy(type: string, progress = 0): EnemyEntity {
+    const safeProgress = Math.max(0, Math.min(0.95, progress));
+    const enemy = this.#createEnemy(type, undefined, undefined, {
+      progress: safeProgress,
+      position: this.path.getPointAt(safeProgress),
+    });
+    this.#state.enemies.push(enemy);
+    this.#emit();
+    return enemy;
+  }
+
+  /** Development-only terminal transition used to keep unlock E2E coverage fast. */
+  debugCompleteLevel(): void {
+    if (this.phase === "victory" || this.phase === "defeat") return;
+    this.#finish("victory");
     this.#emit();
   }
 
@@ -931,6 +1022,17 @@ export class CampaignSession {
       );
       this.#state.hero.tickAnimation(scaledDelta);
     }
+    for (const enemy of this.#state.enemies) {
+      enemy.huntersMarked = false;
+      enemy.huntersMarkTowerBonus = 0;
+    }
+    const marked = this.#state.hero?.markedTargetId
+      ? this.#state.enemies.find((enemy) => enemy.id === this.#state.hero?.markedTargetId && enemy.isAlive)
+      : null;
+    if (marked && this.#state.hero) {
+      marked.huntersMarked = true;
+      marked.huntersMarkTowerBonus = this.#state.hero.markTowerDamageBonus;
+    }
     this.#towerAura.update(this.#state.hero, this.#state.runtimeTowers);
 
     if (this.flow.phase === "preparing") {
@@ -1020,8 +1122,11 @@ export class CampaignSession {
         xp: this.#settings.heroXp,
         skillPoints: this.#settings.heroSkillPoints,
         skills: this.#settings.heroSkills,
+        abilityCooldowns: this.#settings.heroAbilityCooldowns,
       }),
       selectedHeroId: null,
+      selectedHeroAbility: null,
+      heroAbilityPreview: null,
       effects: [],
       screenShake: 0,
       reducedMotion: this.#reducedMotion,
@@ -1071,6 +1176,7 @@ export class CampaignSession {
     readonly skills?: Readonly<Partial<HeroSkillLevels>>;
     readonly position?: Position;
     readonly moveTarget?: Position | null;
+    readonly abilityCooldowns?: Readonly<Partial<Record<ActiveHeroSkillId, number>>>;
   }): HeroEntity | null {
     const definition = this.#level.heroConfig;
     if (!definition) return null;
@@ -1083,6 +1189,7 @@ export class CampaignSession {
       xp: options.xp,
       skillPoints: options.skillPoints,
       skills: options.skills,
+      abilityCooldowns: options.abilityCooldowns,
     });
   }
 
@@ -1164,6 +1271,56 @@ export class CampaignSession {
     };
   }
 
+  #refreshHeroAbilityPreview(point: Position): void {
+    const type = this.#state.selectedHeroAbility;
+    const hero = this.#state.hero;
+    if (!type || !hero) {
+      this.#state.heroAbilityPreview = null;
+      return;
+    }
+    const effect = hero.skillEffect(type);
+    let valid = true;
+    let radius = 20;
+    if (type === "rainOfArrows") radius = 105;
+    if (type === "windStep") {
+      const cell = this.converter.worldToGrid(point);
+      valid = this.grid.contains(cell)
+        && this.grid.isWalkable(cell)
+        && Math.hypot(point.x - hero.position.x, point.y - hero.position.y) <= (effect?.windStepDistance ?? 0);
+      radius = 24;
+    }
+    if (type === "huntersMark") {
+      valid = this.#enemyAt(point)?.isAlive === true;
+      radius = 22;
+    }
+    this.#state.heroAbilityPreview = { type, position: { ...point }, radius, valid };
+  }
+
+  #confirmHeroAbility(point: Position): void {
+    const type = this.#state.selectedHeroAbility;
+    const hero = this.#state.hero;
+    if (!type || !hero) return;
+    if (type === "rainOfArrows") {
+      hero.startRainOfArrows(point);
+    } else if (type === "windStep") {
+      const distance = hero.skillEffect("windStep")?.windStepDistance ?? 0;
+      const error = this.#heroMovement.startWindStep(hero, point, distance, this.#state.occupiedCells);
+      if (error) throw new CommandValidationError(error);
+      hero.beginWindStepCooldown();
+    } else {
+      const enemy = this.#enemyAt(point);
+      if (!enemy?.isAlive) throw new CommandValidationError("Hunter's Mark requires a living enemy.");
+      hero.applyHuntersMark(enemy.id);
+      enemy.huntersMarked = true;
+      enemy.huntersMarkTowerBonus = hero.markTowerDamageBonus;
+    }
+    this.#state.selectedHeroAbility = null;
+    this.#state.heroAbilityPreview = null;
+    this.#showMessage(`${heroSkillDefinitions[type].name} activated.`, "success");
+    this.#saveGame();
+    this.#emit();
+  }
+
   #enemyAt(point: Position): EnemyEntity | null {
     let nearest: EnemyEntity | null = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
@@ -1242,6 +1399,9 @@ export class CampaignSession {
       heroSkills: outcome === "victory" && this.#state.hero
         ? { ...this.#state.hero.skills }
         : this.#settings.heroSkills,
+      heroAbilityCooldowns: outcome === "victory" && this.#state.hero
+        ? { ...this.#state.hero.abilityCooldowns }
+        : this.#settings.heroAbilityCooldowns,
     };
     this.#saveSettings();
     this.#storage.clearGame();
@@ -1333,6 +1493,7 @@ export class CampaignSession {
         xp: this.#state.hero.xp,
         skillPoints: this.#state.hero.skillPoints,
         skills: { ...this.#state.hero.skills },
+        abilityCooldowns: { ...this.#state.hero.abilityCooldowns },
       } : null,
       wave: this.#waveSystem.snapshot(),
     });
@@ -1372,6 +1533,7 @@ export class CampaignSession {
         skills: save.hero.skills,
         position: save.hero.position,
         moveTarget: save.hero.moveTarget,
+        abilityCooldowns: save.hero.abilityCooldowns,
       });
       if (!restoredHero
         || (restoredHero.level < restoredHero.maximumLevel
@@ -1490,6 +1652,7 @@ export class CampaignSession {
       heroXp: this.#settings.heroXp,
       heroSkillPoints: this.#settings.heroSkillPoints,
       heroSkills: this.#settings.heroSkills,
+      heroAbilityCooldowns: this.#settings.heroAbilityCooldowns,
     });
   }
 

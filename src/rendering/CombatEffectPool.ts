@@ -1,7 +1,7 @@
 import type { Position } from "../game/types.js";
 
 export interface CombatEffectEvent {
-  readonly type: "shot" | "hit" | "enemy-death" | "boss-phase";
+  readonly type: "shot" | "hit" | "enemy-death" | "boss-phase" | "enemy-heal" | "enemy-enrage" | "enemy-summon";
   readonly position: Position;
   readonly damage?: number;
   readonly damageType?: string;
@@ -81,6 +81,20 @@ export class CombatEffectPool {
   }
 
   emit(event: CombatEffectEvent): void {
+    if (event.type === "enemy-heal") {
+      this.#activate("enemy-heal", event.position, 18, "#86efac", 0.45, false, "circle", 28, 2);
+      this.#burst(event.position, "#bbf7d0", this.#reducedMotion ? 2 : 8, 48, "spark");
+      return;
+    }
+    if (event.type === "enemy-enrage") {
+      this.#activate("enemy-enrage", event.position, 22, "#ef4444", 0.55, false, "circle", 34, 3);
+      return;
+    }
+    if (event.type === "enemy-summon") {
+      this.#activate("enemy-summon", event.position, 16, "#c084fc", 0.65, false, "circle", 52, 3);
+      this.#burst(event.position, "#e9d5ff", this.#reducedMotion ? 2 : 12, 65, "smoke");
+      return;
+    }
     if (event.type === "shot") {
       this.#activate("muzzle", event.position, 7, "#fff1a8", 0.1, true, "circle");
       this.#burst(event.position, "#fde68a", this.#reducedMotion ? 1 : 3, 45, "spark");

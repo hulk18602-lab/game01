@@ -1,7 +1,7 @@
 import type { DifficultyId, GameSpeed } from "../game/GameFlow.js";
 import type { TargetingMode } from "../game/types.js";
 import type { LevelId } from "../content/levels/levelDefinitions.js";
-import type { HeroSkillId } from "../content/heroes/heroSkills.js";
+import type { ActiveHeroSkillId, HeroSkillBranch, HeroSkillId } from "../content/heroes/heroSkills.js";
 
 /** Read-only projections consumed by the UI. Game entities never cross this boundary. */
 export interface HudView {
@@ -121,6 +121,11 @@ export interface HeroSkillView {
   readonly nextBonus: string;
   readonly upgradeAvailable: boolean;
   readonly blockedReason: string | null;
+  readonly branch: HeroSkillBranch;
+  readonly kind: "passive" | "active";
+  readonly hotkey: "Q" | "E" | "R" | null;
+  readonly cooldown: number;
+  readonly prerequisiteText: string;
 }
 
 export interface HeroSkillsView {
@@ -163,6 +168,7 @@ export type OverlayView =
     readonly levelName: string;
     readonly totalWaves: number;
     readonly nextLevelId: LevelId | null;
+    readonly campaignCompleted: boolean;
   }
   | { readonly kind: "defeat"; readonly wave: number; readonly score: number };
 
@@ -194,6 +200,7 @@ export type UiCommand =
   | { readonly type: "cancel-build" }
   | { readonly type: "upgrade-tower"; readonly towerId: string }
   | { readonly type: "upgrade-hero-skill"; readonly skillId: HeroSkillId }
+  | { readonly type: "activate-hero-ability"; readonly skillId: ActiveHeroSkillId }
   | { readonly type: "sell-tower"; readonly towerId: string }
   | { readonly type: "set-targeting"; readonly towerId: string; readonly mode: TargetingMode }
   | { readonly type: "toggle-pause" }
@@ -205,6 +212,7 @@ export type UiCommand =
     readonly sfxVolume?: number;
   }
   | { readonly type: "restart-game" }
+  | { readonly type: "new-campaign" }
   | { readonly type: "return-menu" };
 
 export interface UiSelectors<State> {

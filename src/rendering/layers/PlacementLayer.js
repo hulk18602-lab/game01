@@ -5,6 +5,18 @@ export class PlacementLayer {
   }
 
   render(context, state) {
+    const ability = state.heroAbilityPreview;
+    if (ability) {
+      const accent = ability.valid ? "#facc15" : "#ef4444";
+      context.save();
+      context.fillStyle = ability.type === "rainOfArrows" ? "rgba(250, 204, 21, .14)" : "rgba(167, 139, 250, .14)";
+      context.strokeStyle = accent;
+      context.lineWidth = 3;
+      context.setLineDash([7, 5]);
+      context.beginPath(); context.arc(ability.position.x, ability.position.y, ability.radius, 0, Math.PI * 2); context.fill(); context.stroke();
+      context.setLineDash([]);
+      context.restore();
+    }
     const selected = state.selectedTowerRange;
     if (selected) {
       context.globalAlpha = 0.11;

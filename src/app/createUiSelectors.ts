@@ -8,6 +8,7 @@ import {
 } from "../content/heroes/heroSkills.js";
 import { eldrinVisual, visualTierForHeroLevel } from "../content/visuals/heroVisuals.js";
 import { getTowerVisual } from "../content/visuals/towerVisuals.js";
+import { finalLevelId } from "../content/levels/levelDefinitions.js";
 import type {
   OverlayView,
   UiSelectors,
@@ -163,6 +164,13 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
             nextBonus: next?.bonusText ?? "Maximum level reached",
             upgradeAvailable: blockedReason === null,
             blockedReason,
+            branch: definition.branch,
+            kind: definition.kind,
+            hotkey: definition.hotkey ?? null,
+            cooldown: definition.kind === "active" ? hero.abilityCooldowns[skillId as keyof typeof hero.abilityCooldowns] ?? 0 : 0,
+            prerequisiteText: definition.prerequisites.length > 0
+              ? definition.prerequisites.map((item) => `${heroSkillDefinitions[item.skillId].name} ${item.level}`).join(", ")
+              : "None",
           };
         }),
       };
@@ -203,6 +211,7 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
           levelName: session.levelName,
           totalWaves: session.totalWaves,
           nextLevelId: session.nextLevelId,
+          campaignCompleted: session.levelId === finalLevelId,
         };
       }
       if (session.phase === "defeat") {

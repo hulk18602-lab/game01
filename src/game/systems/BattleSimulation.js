@@ -26,7 +26,7 @@ export class BattleSimulation {
 
   update(deltaSeconds, towers, enemies, hero = null) {
     this.statusEffects.update(deltaSeconds, enemies);
-    this.abilities.update(deltaSeconds, enemies);
+    this.abilities.update(deltaSeconds, enemies, towers);
     const reached = this.movement.update(enemies, deltaSeconds);
     let baseDamage = 0;
     this.movement.handleBaseReached(reached, (enemy) => {

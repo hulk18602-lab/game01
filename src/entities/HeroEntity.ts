@@ -7,6 +7,7 @@ import {
   MAX_HERO_LEVEL,
   type HeroSkillId,
   type HeroSkillLevels,
+  type ActiveHeroSkillId,
   xpRequiredForHeroLevel,
 } from "../content/heroes/heroSkills.js";
 
@@ -28,10 +29,18 @@ export interface HeroEntityOptions {
   readonly xp?: number;
   readonly skillPoints?: number;
   readonly skills?: Readonly<Partial<HeroSkillLevels>>;
+  readonly abilityCooldowns?: Readonly<Partial<Record<ActiveHeroSkillId, number>>>;
 }
 
 export type HeroMovementState = "idle" | "walking" | "running";
 export type HeroCombatState = "idle" | "aiming" | "shooting";
+
+export interface RainOfArrowsState {
+  readonly center: Position;
+  remaining: number;
+  accumulator: number;
+  strikesRemaining: number;
+}
 
 const orderedDirections: readonly HeroDirection[] = [
   "east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east",
@@ -59,6 +68,17 @@ export class HeroEntity {
   xpToNextLevel: number;
   skillPoints: number;
   readonly skills: HeroSkillLevels;
+  readonly abilityCooldowns: Record<ActiveHeroSkillId, number> = {
+    rainOfArrows: 0,
+    windStep: 0,
+    huntersMark: 0,
+  };
+  rainOfArrows: RainOfArrowsState | null = null;
+  markedTargetId: string | null = null;
+  markRemaining = 0;
+  markHeroDamageBonus = 0;
+  markTowerDamageBonus = 0;
+  windStepActive = false;
   readonly maximumLevel = MAX_HERO_LEVEL;
   readonly projectileSpeed: number;
   readonly damageType = "physical";
@@ -101,6 +121,10 @@ export class HeroEntity {
     this.level = Math.min(MAX_HERO_LEVEL, Math.max(1, Math.floor(options.level ?? 1)));
     this.xp = this.level >= MAX_HERO_LEVEL ? 0 : Math.max(0, Math.floor(options.xp ?? 0));
     this.skills = createDefaultHeroSkills();
+    for (const skillId of Object.keys(this.abilityCooldowns) as ActiveHeroSkillId[]) {
+      const cooldown = options.abilityCooldowns?.[skillId];
+      if (Number.isFinite(cooldown) && Number(cooldown) >= 0) this.abilityCooldowns[skillId] = Number(cooldown);
+    }
     for (const skillId of heroSkillIds) {
       const level = options.skills?.[skillId];
       if (Number.isInteger(level)) {
@@ -154,6 +178,11 @@ export class HeroEntity {
     if (this.level < next.requiredHeroLevel) {
       return `${definition.name} level ${current + 1} requires hero level ${next.requiredHeroLevel}.`;
     }
+    for (const prerequisite of definition.prerequisites) {
+      if (this.skills[prerequisite.skillId] < prerequisite.level) {
+        return `${definition.name} requires ${heroSkillDefinitions[prerequisite.skillId].name} level ${prerequisite.level}.`;
+      }
+    }
     return null;
   }
 
@@ -169,6 +198,15 @@ export class HeroEntity {
   tickAnimation(deltaSeconds: number): void {
     this.shotAnimation = Math.max(0, this.shotAnimation - deltaSeconds * 5);
     this.skillFeedback = Math.max(0, this.skillFeedback - deltaSeconds * 1.8);
+    for (const skillId of Object.keys(this.abilityCooldowns) as ActiveHeroSkillId[]) {
+      this.abilityCooldowns[skillId] = Math.max(0, this.abilityCooldowns[skillId] - deltaSeconds);
+    }
+    this.markRemaining = Math.max(0, this.markRemaining - deltaSeconds);
+    if (this.markRemaining === 0) {
+      this.markedTargetId = null;
+      this.markHeroDamageBonus = 0;
+      this.markTowerDamageBonus = 0;
+    }
   }
 
   beginFrame(): void {
@@ -231,6 +269,38 @@ export class HeroEntity {
   get auraFireRateBonus(): number {
     return heroSkillDefinitions.rallyAura.levels[this.skills.rallyAura - 1]
       ?.auraFireRateBonus ?? 0;
+  }
+
+  skillEffect(skillId: HeroSkillId) {
+    const level = this.skills[skillId];
+    return level > 0 ? heroSkillDefinitions[skillId].levels[level - 1] ?? null : null;
+  }
+
+  startRainOfArrows(center: Position): void {
+    const effect = this.skillEffect("rainOfArrows");
+    if (!effect?.rainArrowCount || !effect.cooldown) throw new Error("Rain of Arrows is not learned.");
+    if (this.abilityCooldowns.rainOfArrows > 0) throw new Error("Rain of Arrows is cooling down.");
+    this.rainOfArrows = { center: { ...center }, remaining: 2, accumulator: 0, strikesRemaining: effect.rainArrowCount };
+    this.abilityCooldowns.rainOfArrows = effect.cooldown;
+  }
+
+  applyHuntersMark(targetId: string): void {
+    const effect = this.skillEffect("huntersMark");
+    if (!effect?.markDuration || !effect.cooldown) throw new Error("Hunter's Mark is not learned.");
+    if (this.abilityCooldowns.huntersMark > 0) throw new Error("Hunter's Mark is cooling down.");
+    this.markedTargetId = targetId;
+    this.markRemaining = effect.markDuration;
+    this.markHeroDamageBonus = effect.markHeroDamage ?? 0;
+    this.markTowerDamageBonus = effect.markTowerDamage ?? 0;
+    this.abilityCooldowns.huntersMark = effect.cooldown;
+  }
+
+  beginWindStepCooldown(): void {
+    const effect = this.skillEffect("windStep");
+    if (!effect?.cooldown) throw new Error("Wind Step is not learned.");
+    if (this.abilityCooldowns.windStep > 0) throw new Error("Wind Step is cooling down.");
+    this.abilityCooldowns.windStep = effect.cooldown;
+    this.windStepActive = true;
   }
 
   #applyLevelStats(): void {

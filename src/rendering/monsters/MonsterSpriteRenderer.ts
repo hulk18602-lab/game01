@@ -23,6 +23,14 @@ interface RenderEnemy {
   readonly armor?: number;
   readonly regeneration?: number;
   readonly statusEffects?: readonly { readonly type: string }[];
+  readonly enraged?: boolean;
+  readonly speedAura?: number;
+  readonly coldResistance?: number;
+  readonly healAmount?: number;
+  readonly phaseRemaining?: number;
+  readonly summonInto?: string | null;
+  readonly towerDebuff?: number;
+  readonly huntersMarked?: boolean;
 }
 
 interface PresentationState {
@@ -42,6 +50,14 @@ interface PresentationState {
   regeneration: number;
   poisoned: boolean;
   slowed: boolean;
+  enraged: boolean;
+  supportAura: boolean;
+  frostbound: boolean;
+  healer: boolean;
+  phased: boolean;
+  summoner: boolean;
+  towerDebuffer: boolean;
+  huntersMarked: boolean;
   direction: MonsterDirection;
   animation: MonsterAnimationState;
   stateSince: number;
@@ -109,6 +125,7 @@ export class MonsterSpriteRenderer {
       canvas.dataset.monsterLoadingProgress = this.assets.progress.toFixed(2);
       canvas.dataset.monsterVisualStates = debugStates.join(",");
       canvas.dataset.monsterSprites = this.assets.loadedCount > 0 ? "active" : "loading";
+      canvas.dataset.monsterVisualArchitecture = "humanoid-sprite-v1";
     }
   }
 
@@ -132,6 +149,14 @@ export class MonsterSpriteRenderer {
         regeneration: enemy.regeneration ?? 0,
         poisoned: false,
         slowed: false,
+        enraged: false,
+        supportAura: false,
+        frostbound: false,
+        healer: false,
+        phased: false,
+        summoner: false,
+        towerDebuffer: false,
+        huntersMarked: false,
         direction: "right",
         animation: "idle",
         stateSince: now,
@@ -165,6 +190,14 @@ export class MonsterSpriteRenderer {
     state.poisoned = (enemy.statusEffects ?? []).some((effect) =>
       effect.type === "poison" || effect.type === "damageOverTime",
     );
+    state.enraged = enemy.enraged === true;
+    state.supportAura = (enemy.speedAura ?? 1) > 1;
+    state.frostbound = (enemy.coldResistance ?? 0) > 0;
+    state.healer = (enemy.healAmount ?? 0) > 0;
+    state.phased = (enemy.phaseRemaining ?? 0) > 0;
+    state.summoner = Boolean(enemy.summonInto);
+    state.towerDebuffer = (enemy.towerDebuff ?? 1) < 1;
+    state.huntersMarked = enemy.huntersMarked === true;
 
     const nextAnimation = selectAnimationState({
       now,
@@ -214,17 +247,21 @@ export class MonsterSpriteRenderer {
       context.translate(state.position.x * 2, 0);
       context.scale(-1, 1);
     }
-    context.drawImage(
-      image,
-      column * definition.frameWidth,
-      row * definition.frameHeight,
-      definition.frameWidth,
-      definition.frameHeight,
-      left,
-      top,
-      definition.displayWidth,
-      definition.displayHeight,
-    );
+    if (asset?.loaded) {
+      context.drawImage(
+        image,
+        column * definition.frameWidth,
+        row * definition.frameHeight,
+        definition.frameWidth,
+        definition.frameHeight,
+        left,
+        top,
+        definition.displayWidth,
+        definition.displayHeight,
+      );
+    } else {
+      this.#drawHumanoidPlaceholder(context, state, definition, now, reducedMotion);
+    }
     context.restore();
 
     this.#drawOverlays(context, state, definition, now, reducedMotion);
@@ -236,6 +273,7 @@ export class MonsterSpriteRenderer {
     if (state.hitUntil > now) filters.push("brightness(2.1)", "sepia(.45)", "saturate(2.2)");
     if (state.slowed) filters.push("hue-rotate(145deg)", "saturate(.7)");
     if (state.poisoned) filters.push("hue-rotate(55deg)", "saturate(1.35)");
+    if (state.phased) filters.push("opacity(.42)", "hue-rotate(235deg)");
     return filters.join(" ") || "none";
   }
 
@@ -255,6 +293,36 @@ export class MonsterSpriteRenderer {
       context.beginPath();
       context.ellipse(x, y, definition.displayWidth * 0.48, definition.displayHeight * 0.48, 0, 0, Math.PI * 2);
       context.stroke();
+    }
+    if (state.enraged) {
+      context.strokeStyle = "rgba(239, 68, 68, .8)";
+      context.lineWidth = 3;
+      context.beginPath(); context.ellipse(x, state.position.y, definition.displayWidth * .48, 13, 0, 0, Math.PI * 2); context.stroke();
+    }
+    if (state.supportAura) {
+      context.strokeStyle = "rgba(250, 204, 21, .62)";
+      context.lineWidth = 2;
+      context.setLineDash([5, 5]);
+      context.beginPath(); context.arc(x, state.position.y, 28, 0, Math.PI * 2); context.stroke();
+      context.setLineDash([]);
+    }
+    if (state.frostbound) {
+      context.strokeStyle = "rgba(165, 243, 252, .72)";
+      context.lineWidth = 2;
+      context.beginPath(); context.arc(x, y, definition.displayWidth * .42, 0, Math.PI * 2); context.stroke();
+    }
+    if (state.phased) {
+      context.strokeStyle = "rgba(196, 181, 253, .72)";
+      context.lineWidth = 2;
+      context.beginPath(); context.ellipse(x, y, definition.displayWidth * .55, definition.displayHeight * .45, 0, 0, Math.PI * 2); context.stroke();
+    }
+    if (state.huntersMarked) {
+      context.strokeStyle = "#facc15";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(x - 8, y - 20); context.lineTo(x, y - 12); context.lineTo(x + 8, y - 20);
+      context.stroke();
+      context.beginPath(); context.arc(x, y - 12, 12, 0, Math.PI * 2); context.stroke();
     }
     if (state.hitUntil > now && state.armor > 0) {
       context.fillStyle = "#fef08a";
@@ -289,6 +357,49 @@ export class MonsterSpriteRenderer {
     context.beginPath();
     context.ellipse(state.position.x, state.position.y, definition.displayWidth * 0.48 + pulse, 13 + pulse * .25, 0, 0, Math.PI * 2);
     context.stroke();
+  }
+
+  #drawHumanoidPlaceholder(
+    context: CanvasRenderingContext2D,
+    state: PresentationState,
+    definition: MonsterVisualDefinition,
+    now: number,
+    reducedMotion: boolean,
+  ): void {
+    const stride = reducedMotion ? 0 : Math.sin((now - state.stateSince) * 10) * 4;
+    const hitLean = state.animation === "hit" ? -4 : 0;
+    context.save();
+    context.translate(state.position.x, state.position.y - definition.displayHeight * .45);
+    context.rotate(hitLean * Math.PI / 180);
+    context.strokeStyle = "#172033";
+    context.lineCap = "round";
+    context.lineWidth = 6;
+    context.beginPath(); context.moveTo(-5, 18); context.lineTo(-8 + stride, 34); context.moveTo(5, 18); context.lineTo(8 - stride, 34); context.stroke();
+    context.fillStyle = definition.clothColor;
+    context.strokeStyle = "#1e293b";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-13, -8); context.lineTo(11, -8); context.lineTo(14, 19); context.lineTo(-14, 19); context.closePath();
+    context.fill(); context.stroke();
+    context.fillStyle = definition.accentColor;
+    context.fillRect(-13, 4, 27, 5);
+    context.fillStyle = "#d7b58d";
+    context.beginPath(); context.arc(0, -17, 9, 0, Math.PI * 2); context.fill(); context.stroke();
+    context.fillStyle = definition.accentColor;
+    context.beginPath(); context.moveTo(-10, -19); context.lineTo(0, -30); context.lineTo(10, -19); context.closePath(); context.fill();
+    this.#drawPlaceholderWeapon(context, definition);
+    context.restore();
+  }
+
+  #drawPlaceholderWeapon(context: CanvasRenderingContext2D, definition: MonsterVisualDefinition): void {
+    context.strokeStyle = definition.weapon === "staff" || definition.weapon === "banner" ? "#8b5e34" : "#cbd5e1";
+    context.lineWidth = definition.weapon === "axe" || definition.weapon === "mace" ? 5 : 3;
+    context.beginPath(); context.moveTo(12, 12); context.lineTo(24, -20); context.stroke();
+    context.fillStyle = definition.accentColor;
+    if (definition.weapon === "banner") context.fillRect(23, -24, 18, 14);
+    else if (definition.weapon === "staff") { context.beginPath(); context.arc(25, -23, 6, 0, Math.PI * 2); context.fill(); }
+    else if (definition.weapon === "axe") { context.beginPath(); context.moveTo(20, -24); context.lineTo(34, -20); context.lineTo(25, -11); context.closePath(); context.fill(); }
+    else { context.beginPath(); context.arc(25, -22, 5, 0, Math.PI * 2); context.fill(); }
   }
 
   #drawHealthBar(context: CanvasRenderingContext2D, state: PresentationState, definition: MonsterVisualDefinition): void {

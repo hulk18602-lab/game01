@@ -5,12 +5,13 @@ import {
   heroSkillIds,
   MAX_HERO_LEVEL,
   type HeroSkillLevels,
+  type ActiveHeroSkillId,
   xpRequiredForHeroLevel,
 } from "../../content/heroes/heroSkills.js";
 import type { DifficultyId, FlowSnapshot, GameSpeed } from "../GameFlow.js";
 import type { Position } from "../types.js";
 
-export const SAVE_SCHEMA_VERSION = 2;
+export const SAVE_SCHEMA_VERSION = 3;
 const SETTINGS_KEY = "river-outpost.settings";
 const ACTIVE_GAME_KEY = "river-outpost.active-game";
 
@@ -37,7 +38,11 @@ export interface GameSettings {
   readonly heroXp: number;
   readonly heroSkillPoints: number;
   readonly heroSkills: Readonly<HeroSkillLevels>;
+  readonly heroAbilityCooldowns: Readonly<Record<ActiveHeroSkillId, number>>;
 }
+
+type GameSettingsInput = Omit<GameSettings, "version" | "heroAbilityCooldowns">
+  & Partial<Pick<GameSettings, "heroAbilityCooldowns">>;
 
 export interface SavedTower {
   readonly id: string;
@@ -75,6 +80,7 @@ export interface SavedHero {
   readonly xp: number;
   readonly skillPoints?: number;
   readonly skills?: Readonly<HeroSkillLevels>;
+  readonly abilityCooldowns?: Readonly<Record<ActiveHeroSkillId, number>>;
 }
 
 export interface ActiveGameSave {
@@ -113,6 +119,7 @@ const defaultSettings = (): GameSettings => ({
   heroXp: 0,
   heroSkillPoints: 0,
   heroSkills: createDefaultHeroSkills(),
+  heroAbilityCooldowns: { rainOfArrows: 0, windStep: 0, huntersMark: 0 },
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -160,6 +167,7 @@ interface HeroProgression {
   readonly xp: number;
   readonly skillPoints: number;
   readonly skills: HeroSkillLevels;
+  readonly abilityCooldowns: Record<ActiveHeroSkillId, number>;
 }
 
 const heroProgression = (value: Record<string, unknown>): HeroProgression => {
@@ -201,10 +209,17 @@ const heroProgression = (value: Record<string, unknown>): HeroProgression => {
     && Number(value.heroXp) < required
     ? Number(value.heroXp)
     : 0;
-  return { level, xp, skillPoints, skills };
+  const abilityCooldowns: Record<ActiveHeroSkillId, number> = { rainOfArrows: 0, windStep: 0, huntersMark: 0 };
+  if (isRecord(value.heroAbilityCooldowns)) {
+    for (const id of Object.keys(abilityCooldowns) as ActiveHeroSkillId[]) {
+      const candidate = value.heroAbilityCooldowns[id];
+      if (Number.isFinite(candidate) && Number(candidate) >= 0) abilityCooldowns[id] = Number(candidate);
+    }
+  }
+  return { level, xp, skillPoints, skills, abilityCooldowns };
 };
 
-/** Defensive schema-v2 localStorage boundary with settings-only migration from v1. */
+/** Defensive schema-v3 localStorage boundary with migrations from earlier campaign saves. */
 export class GameStorage {
   constructor(private readonly storage: StorageLike | null) {}
 
@@ -212,8 +227,12 @@ export class GameStorage {
     const parsed = this.read(SETTINGS_KEY);
     if (!isRecord(parsed)) return defaultSettings();
     if (parsed.version === 1) return this.migrateV1Settings(parsed);
+    if (parsed.version === 2) return this.migrateV2Settings(parsed);
     if (parsed.version !== SAVE_SCHEMA_VERSION) return defaultSettings();
+    return this.normalizeSettings(parsed);
+  }
 
+  private normalizeSettings(parsed: Record<string, unknown>): GameSettings {
     const unlocked = levelIds(parsed.unlockedLevelIds, ["level-1"]);
     if (!unlocked.includes("level-1")) unlocked.unshift("level-1");
     const completed = levelIds(parsed.completedLevelIds, []);
@@ -238,18 +257,42 @@ export class GameStorage {
       heroXp: hero.xp,
       heroSkillPoints: hero.skillPoints,
       heroSkills: hero.skills,
+      heroAbilityCooldowns: hero.abilityCooldowns,
     };
   }
 
-  saveSettings(settings: Omit<GameSettings, "version">): void {
-    this.write(SETTINGS_KEY, { version: SAVE_SCHEMA_VERSION, ...settings });
+  saveSettings(settings: GameSettingsInput): void {
+    this.write(SETTINGS_KEY, {
+      version: SAVE_SCHEMA_VERSION,
+      ...settings,
+      heroAbilityCooldowns: settings.heroAbilityCooldowns
+        ?? { rainOfArrows: 0, windStep: 0, huntersMark: 0 },
+    });
   }
 
   loadGame(): ActiveGameSave | null {
-    const parsed = this.read(ACTIVE_GAME_KEY);
+    let parsed = this.read(ACTIVE_GAME_KEY);
     if (isRecord(parsed) && parsed.version === 1) {
       this.remove(ACTIVE_GAME_KEY);
       return null;
+    }
+    if (isRecord(parsed) && parsed.version === 2) {
+      const legacyHero = isRecord(parsed.hero) ? parsed.hero : null;
+      parsed = {
+        ...parsed,
+        version: SAVE_SCHEMA_VERSION,
+        hero: legacyHero
+          ? {
+            ...legacyHero,
+            skills: {
+              ...createDefaultHeroSkills(),
+              ...(isRecord(legacyHero.skills) ? legacyHero.skills : {}),
+            },
+            abilityCooldowns: { rainOfArrows: 0, windStep: 0, huntersMark: 0 },
+          }
+          : parsed.hero,
+      };
+      this.write(ACTIVE_GAME_KEY, parsed);
     }
     if (!this.isActiveGame(parsed)) {
       if (parsed !== null) this.remove(ACTIVE_GAME_KEY);
@@ -268,6 +311,22 @@ export class GameStorage {
 
   clearGame(): void {
     this.remove(ACTIVE_GAME_KEY);
+  }
+
+  resetCampaignProgress(): GameSettings {
+    const current = this.loadSettings();
+    const reset: GameSettings = {
+      ...defaultSettings(),
+      tutorialSeen: current.tutorialSeen,
+      difficulty: current.difficulty,
+      speed: current.speed,
+      soundEnabled: current.soundEnabled,
+      musicVolume: current.musicVolume,
+      sfxVolume: current.sfxVolume,
+    };
+    this.saveSettings(reset);
+    this.clearGame();
+    return reset;
   }
 
   private migrateV1Settings(parsed: Record<string, unknown>): GameSettings {
@@ -291,7 +350,14 @@ export class GameStorage {
       heroXp: 0,
       heroSkillPoints: 0,
       heroSkills: createDefaultHeroSkills(),
+      heroAbilityCooldowns: { rainOfArrows: 0, windStep: 0, huntersMark: 0 },
     };
+    this.saveSettings(migrated);
+    return migrated;
+  }
+
+  private migrateV2Settings(parsed: Record<string, unknown>): GameSettings {
+    const migrated = this.normalizeSettings({ ...parsed, version: SAVE_SCHEMA_VERSION });
     this.saveSettings(migrated);
     return migrated;
   }
@@ -319,6 +385,11 @@ export class GameStorage {
           && (!Number.isInteger(value.hero.skillPoints)
             || Number(value.hero.skillPoints) < 0))
         || (value.hero.skills !== undefined && !this.isHeroSkills(value.hero.skills))) return false;
+      const abilityCooldowns = value.hero.abilityCooldowns;
+      if (abilityCooldowns !== undefined
+        && (!isRecord(abilityCooldowns)
+          || !["rainOfArrows", "windStep", "huntersMark"].every((id) =>
+            Number.isFinite(abilityCooldowns[id]) && Number(abilityCooldowns[id]) >= 0))) return false;
     }
     return Number.isFinite(value.lives)
       && Number.isFinite(value.gold)

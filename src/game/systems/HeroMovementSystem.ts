@@ -51,6 +51,23 @@ export class HeroMovementSystem {
     return null;
   }
 
+  startWindStep(
+    hero: HeroEntity,
+    destination: Position,
+    maximumDistance: number,
+    occupiedCells: ReadonlyMap<string, string>,
+  ): string | null {
+    if (Math.hypot(destination.x - hero.position.x, destination.y - hero.position.y) > maximumDistance) {
+      return `Wind Step destination exceeds ${maximumDistance} world units.`;
+    }
+    const error = this.#plan(hero, destination, occupiedCells);
+    if (error) return error;
+    this.#mode = "pointer";
+    this.#keyboardDirection = "";
+    hero.windStepActive = true;
+    return null;
+  }
+
   update(
     deltaSeconds: number,
     hero: HeroEntity,
@@ -83,7 +100,7 @@ export class HeroMovementSystem {
 
     hero.beginFrame();
     hero.setMovementState("idle");
-    let remainingDistance = hero.speed * deltaSeconds;
+    let remainingDistance = hero.speed * (hero.windStepActive ? 4.5 : 1) * deltaSeconds;
     while (remainingDistance > 0 && this.#waypointIndex < this.#waypoints.length) {
       const waypoint = this.#waypoints[this.#waypointIndex]!;
       const waypointCell = this.#converter.worldToGrid(waypoint);
@@ -199,6 +216,7 @@ export class HeroMovementSystem {
     this.#mode = "idle";
     this.#keyboardDirection = "";
     hero.moveTarget = null;
+    hero.windStepActive = false;
     hero.setMovementState("idle");
   }
 }
