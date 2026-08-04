@@ -4,12 +4,16 @@ import map03 from "../maps/map03.js";
 import map04 from "../maps/map04.js";
 import map05 from "../maps/map05.js";
 import map06 from "../maps/map06.js";
+import map07 from "../maps/map07.js";
+import map08 from "../maps/map08.js";
 import waveDefinitions from "../waves/waveDefinitions.js";
 import level02WaveDefinitions from "../waves/level02WaveDefinitions.js";
 import level03WaveDefinitions from "../waves/level03WaveDefinitions.js";
 import level04WaveDefinitions from "../waves/level04WaveDefinitions.js";
 import level05WaveDefinitions from "../waves/level05WaveDefinitions.js";
 import level06WaveDefinitions from "../waves/level06WaveDefinitions.js";
+import level07WaveDefinitions from "../waves/level07WaveDefinitions.js";
+import level08WaveDefinitions from "../waves/level08WaveDefinitions.js";
 import type { MapDefinition, WaveDefinition } from "../../game/CampaignSession.js";
 import type { Position } from "../../game/types.js";
 
@@ -75,6 +79,18 @@ const labyrinthEnemies = Object.freeze([
   ...highlandEnemies,
   "frostboundKnight",
   "iceShaman",
+]);
+const shadowfenEnemies = Object.freeze([
+  ...labyrinthEnemies,
+  "shadowAssassin",
+  "shadowMinion",
+  "necromancer",
+]);
+const eclipseEnemies = Object.freeze([
+  ...shadowfenEnemies,
+  "dreadPaladin",
+  "voidWarlock",
+  "eclipseKing",
 ]);
 const eldrinStats = Object.freeze({
   id: "hero-eldrin",
@@ -178,6 +194,34 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
     availableEnemyTypes: labyrinthEnemies,
     heroConfig: Object.freeze({ ...eldrinStats, spawnCell: Object.freeze({ x: 14, y: 11 }) }),
     unlocksLevelId: "level-7",
+    contentVersion: 1,
+  }),
+  defineLevel({
+    id: "level-7",
+    number: 7,
+    playable: true,
+    name: "Shadowfen March",
+    description: "Advance through drowned ruins hunted by assassins and death-bound summoners.",
+    map: map07 as unknown as MapDefinition,
+    waves: level07WaveDefinitions as unknown as readonly WaveDefinition[],
+    availableTowerTypes: serpentTowers,
+    availableEnemyTypes: shadowfenEnemies,
+    heroConfig: Object.freeze({ ...eldrinStats, spawnCell: Object.freeze({ x: 14, y: 12 }) }),
+    unlocksLevelId: "level-8",
+    contentVersion: 1,
+  }),
+  defineLevel({
+    id: "level-8",
+    number: 8,
+    playable: true,
+    name: "Eclipse Throne",
+    description: "Assault the final dark citadel and end the reign of the Eclipse King.",
+    map: map08 as unknown as MapDefinition,
+    waves: level08WaveDefinitions as unknown as readonly WaveDefinition[],
+    availableTowerTypes: serpentTowers,
+    availableEnemyTypes: eclipseEnemies,
+    heroConfig: Object.freeze({ ...eldrinStats, spawnCell: Object.freeze({ x: 16, y: 12 }) }),
+    unlocksLevelId: null,
     contentVersion: 1,
   }),
 ]);

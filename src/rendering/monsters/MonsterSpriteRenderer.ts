@@ -27,6 +27,9 @@ interface RenderEnemy {
   readonly speedAura?: number;
   readonly coldResistance?: number;
   readonly healAmount?: number;
+  readonly phaseRemaining?: number;
+  readonly summonInto?: string | null;
+  readonly towerDebuff?: number;
 }
 
 interface PresentationState {
@@ -50,6 +53,9 @@ interface PresentationState {
   supportAura: boolean;
   frostbound: boolean;
   healer: boolean;
+  phased: boolean;
+  summoner: boolean;
+  towerDebuffer: boolean;
   direction: MonsterDirection;
   animation: MonsterAnimationState;
   stateSince: number;
@@ -144,6 +150,9 @@ export class MonsterSpriteRenderer {
         supportAura: false,
         frostbound: false,
         healer: false,
+        phased: false,
+        summoner: false,
+        towerDebuffer: false,
         direction: "right",
         animation: "idle",
         stateSince: now,
@@ -181,6 +190,9 @@ export class MonsterSpriteRenderer {
     state.supportAura = (enemy.speedAura ?? 1) > 1;
     state.frostbound = (enemy.coldResistance ?? 0) > 0;
     state.healer = (enemy.healAmount ?? 0) > 0;
+    state.phased = (enemy.phaseRemaining ?? 0) > 0;
+    state.summoner = Boolean(enemy.summonInto);
+    state.towerDebuffer = (enemy.towerDebuff ?? 1) < 1;
 
     const nextAnimation = selectAnimationState({
       now,
@@ -256,6 +268,7 @@ export class MonsterSpriteRenderer {
     if (state.hitUntil > now) filters.push("brightness(2.1)", "sepia(.45)", "saturate(2.2)");
     if (state.slowed) filters.push("hue-rotate(145deg)", "saturate(.7)");
     if (state.poisoned) filters.push("hue-rotate(55deg)", "saturate(1.35)");
+    if (state.phased) filters.push("opacity(.42)", "hue-rotate(235deg)");
     return filters.join(" ") || "none";
   }
 
@@ -292,6 +305,11 @@ export class MonsterSpriteRenderer {
       context.strokeStyle = "rgba(165, 243, 252, .72)";
       context.lineWidth = 2;
       context.beginPath(); context.arc(x, y, definition.displayWidth * .42, 0, Math.PI * 2); context.stroke();
+    }
+    if (state.phased) {
+      context.strokeStyle = "rgba(196, 181, 253, .72)";
+      context.lineWidth = 2;
+      context.beginPath(); context.ellipse(x, y, definition.displayWidth * .55, definition.displayHeight * .45, 0, 0, Math.PI * 2); context.stroke();
     }
     if (state.hitUntil > now && state.armor > 0) {
       context.fillStyle = "#fef08a";

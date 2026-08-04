@@ -18,7 +18,7 @@ export class TargetingSystem {
   }
 
   isValidTarget(tower, enemy) {
-    return isAlive(enemy) && distanceSquared(tower, enemy) <= tower.range ** 2;
+    return isAlive(enemy) && enemy.targetable !== false && distanceSquared(tower, enemy) <= tower.range ** 2;
   }
 
   selectTarget(tower, enemies) {

@@ -97,6 +97,30 @@ export const monsterVisuals = Object.freeze({
     width: 1122, height: 1402, displayWidth: 66, displayHeight: 80, walkFps: 7,
     clothColor: "#164e63", accentColor: "#a5f3fc", weapon: "staff",
   }),
+  shadowAssassin: visual("shadowAssassin", {
+    width: 1122, height: 1402, displayWidth: 58, displayHeight: 72, walkFps: 13,
+    clothColor: "#312e81", accentColor: "#c4b5fd", weapon: "daggers", shadowScale: .9,
+  }),
+  shadowMinion: visual("shadowMinion", {
+    width: 1122, height: 1402, displayWidth: 48, displayHeight: 62, walkFps: 10,
+    clothColor: "#334155", accentColor: "#94a3b8", weapon: "daggers", shadowScale: .78,
+  }),
+  necromancer: visual("necromancer", {
+    width: 1122, height: 1402, displayWidth: 72, displayHeight: 84, walkFps: 6,
+    clothColor: "#3b0764", accentColor: "#d8b4fe", weapon: "staff",
+  }),
+  dreadPaladin: visual("dreadPaladin", {
+    width: 1122, height: 1402, displayWidth: 88, displayHeight: 92, walkFps: 4,
+    clothColor: "#27272a", accentColor: "#a855f7", weapon: "mace", shadowScale: 1.35,
+  }),
+  voidWarlock: visual("voidWarlock", {
+    width: 1122, height: 1402, displayWidth: 70, displayHeight: 84, walkFps: 6,
+    clothColor: "#581c87", accentColor: "#f0abfc", weapon: "staff",
+  }),
+  eclipseKing: visual("eclipseKing", {
+    width: 1402, height: 1122, displayWidth: 128, displayHeight: 126, walkFps: 4,
+    clothColor: "#18181b", accentColor: "#e879f9", weapon: "sword", shadowScale: 1.65,
+  }),
 } satisfies Record<string, MonsterVisualDefinition>);
 
 const aliases: Readonly<Record<string, keyof typeof monsterVisuals>> = Object.freeze({
