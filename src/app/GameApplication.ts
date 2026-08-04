@@ -269,6 +269,11 @@ export class GameApplication {
         case "restart-game":
           session.restart();
           break;
+        case "new-campaign":
+          this.#storage.resetCampaignProgress();
+          this.#replaceRuntime(getLevelDefinition("level-1"));
+          this.#runtime.session.openDifficulty();
+          break;
         case "return-level-select":
           session.returnToLevelSelect();
           break;

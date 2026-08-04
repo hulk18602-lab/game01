@@ -270,6 +270,22 @@ export class GameStorage {
     this.remove(ACTIVE_GAME_KEY);
   }
 
+  resetCampaignProgress(): GameSettings {
+    const current = this.loadSettings();
+    const reset: GameSettings = {
+      ...defaultSettings(),
+      tutorialSeen: current.tutorialSeen,
+      difficulty: current.difficulty,
+      speed: current.speed,
+      soundEnabled: current.soundEnabled,
+      musicVolume: current.musicVolume,
+      sfxVolume: current.sfxVolume,
+    };
+    this.saveSettings(reset);
+    this.clearGame();
+    return reset;
+  }
+
   private migrateV1Settings(parsed: Record<string, unknown>): GameSettings {
     const legacyScore = Number.isFinite(parsed.bestScore) && Number(parsed.bestScore) >= 0
       ? Math.floor(Number(parsed.bestScore))

@@ -22,6 +22,7 @@ export class GameOverlays {
   readonly #continue: HTMLButtonElement;
   readonly #playAgain: HTMLButtonElement;
   readonly #nextLevel: HTMLButtonElement;
+  readonly #newCampaign: HTMLButtonElement;
   readonly #levelSelect: HTMLButtonElement;
   readonly #menu: HTMLButtonElement;
   readonly #difficultyButtons = new Map<string, HTMLButtonElement>();
@@ -47,6 +48,7 @@ export class GameOverlays {
         this.#dispatch({ type: "next-level", levelId: this.#nextLevelId });
       }
     });
+    this.#newCampaign = button("New campaign", () => this.#dispatch({ type: "new-campaign" }));
     this.#levelSelect = button(
       "Level select",
       () => this.#dispatch({ type: "return-level-select" }),
@@ -60,6 +62,7 @@ export class GameOverlays {
       this.#continue,
       this.#playAgain,
       this.#nextLevel,
+      this.#newCampaign,
       this.#levelSelect,
       this.#menu,
     );
@@ -83,7 +86,7 @@ export class GameOverlays {
       }
     }
     if (view.kind === "victory") {
-      signature += `|${view.score}|${view.bestScore}|${view.levelName}|${view.totalWaves}|${view.nextLevelId}`;
+      signature += `|${view.score}|${view.bestScore}|${view.levelName}|${view.totalWaves}|${view.nextLevelId}|${view.campaignCompleted}`;
     }
     if (view.kind === "defeat") signature += `|${view.wave}|${view.score}`;
     if (signature === this.#signature) return;
@@ -147,7 +150,7 @@ export class GameOverlays {
     }
 
     const won = view.kind === "victory";
-    this.#title.textContent = won ? "Victory" : "Defeat";
+    this.#title.textContent = won && view.campaignCompleted ? "Campaign completed" : won ? "Victory" : "Defeat";
     this.#detail.textContent = won
       ? `${view.levelName}: all ${view.totalWaves} waves defeated. Final score: ${view.score}.`
       : `The outpost fell on wave ${view.wave}. Score: ${view.score}.`;
@@ -161,6 +164,7 @@ export class GameOverlays {
       this.#nextLevelId = view.nextLevelId;
       this.#nextLevel.hidden = false;
     }
+    if (won && view.campaignCompleted) this.#newCampaign.hidden = false;
     this.#menu.hidden = false;
   }
 
@@ -208,6 +212,7 @@ export class GameOverlays {
     this.#continue.hidden = true;
     this.#playAgain.hidden = true;
     this.#nextLevel.hidden = true;
+    this.#newCampaign.hidden = true;
     this.#levelSelect.hidden = true;
     this.#menu.hidden = true;
     this.#nextLevelId = null;

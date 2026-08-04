@@ -163,6 +163,7 @@ export type OverlayView =
     readonly levelName: string;
     readonly totalWaves: number;
     readonly nextLevelId: LevelId | null;
+    readonly campaignCompleted: boolean;
   }
   | { readonly kind: "defeat"; readonly wave: number; readonly score: number };
 
@@ -205,6 +206,7 @@ export type UiCommand =
     readonly sfxVolume?: number;
   }
   | { readonly type: "restart-game" }
+  | { readonly type: "new-campaign" }
   | { readonly type: "return-menu" };
 
 export interface UiSelectors<State> {

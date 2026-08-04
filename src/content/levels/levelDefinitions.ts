@@ -9,7 +9,20 @@ import level04WaveDefinitions from "../waves/level04WaveDefinitions.js";
 import type { MapDefinition, WaveDefinition } from "../../game/CampaignSession.js";
 import type { Position } from "../../game/types.js";
 
-export type LevelId = "level-1" | "level-2" | "level-3" | "level-4";
+export const levelIds = [
+  "level-1",
+  "level-2",
+  "level-3",
+  "level-4",
+  "level-5",
+  "level-6",
+  "level-7",
+  "level-8",
+] as const;
+
+export type LevelId = typeof levelIds[number];
+export const firstLevelId: LevelId = levelIds[0]!;
+export const finalLevelId: LevelId = levelIds[levelIds.length - 1]!;
 
 export interface HeroLevelConfig {
   readonly id: string;
@@ -122,7 +135,7 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
       ...eldrinStats,
       spawnCell: Object.freeze({ x: 12, y: 11 }),
     }),
-    unlocksLevelId: null,
+    unlocksLevelId: "level-5",
     contentVersion: 1,
   }),
 ]);
@@ -138,7 +151,7 @@ export function getLevelDefinition(levelId: LevelId): LevelDefinition {
 }
 
 export function isLevelId(value: unknown): value is LevelId {
-  return typeof value === "string" && levelById.has(value as LevelId);
+  return typeof value === "string" && levelIds.includes(value as LevelId);
 }
 
 export default levelDefinitions;
