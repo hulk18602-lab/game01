@@ -1,6 +1,7 @@
 export class EntityLayer {
-  constructor({ monsterRenderer } = {}) {
+  constructor({ monsterRenderer, towerRenderer } = {}) {
     this.monsterRenderer = monsterRenderer ?? null;
+    this.towerRenderer = towerRenderer ?? null;
   }
 
   render(context, state) {
@@ -8,12 +9,22 @@ export class EntityLayer {
       const enemies = state.enemies ?? [];
       const time = state.visualTime ?? 0;
       const reducedMotion = state.reducedMotion === true;
-      for (const tower of state.runtimeTowers ?? []) {
-        this.drawTower(context, tower, enemies, time, reducedMotion);
+      const towers = state.runtimeTowers ?? [];
+      if (this.towerRenderer) {
+        this.towerRenderer.render(context, towers, enemies, {
+          time,
+          reducedMotion,
+          selectedTowerId: state.selectedTowerId ?? null,
+        });
+      } else {
+        for (const tower of towers) this.drawTower(context, tower, enemies, time, reducedMotion);
       }
       if (this.monsterRenderer) this.monsterRenderer.render(context, enemies, time, reducedMotion);
       else for (const enemy of enemies) this.drawEnemy(context, enemy, time, reducedMotion);
-      for (const projectile of state.projectiles ?? []) this.drawProjectile(context, projectile, time);
+      for (const projectile of state.projectiles ?? []) {
+        if (this.towerRenderer) this.towerRenderer.drawProjectile(context, projectile, time);
+        else this.drawProjectile(context, projectile, time);
+      }
       return;
     }
 

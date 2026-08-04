@@ -36,6 +36,19 @@ async function clickCell(page: Page, canvas: Locator, x: number, y: number): Pro
   );
 }
 
+async function moveToCell(page: Page, canvas: Locator, x: number, y: number): Promise<void> {
+  const bounds = await canvas.boundingBox();
+  if (!bounds) throw new Error("Canvas has no layout box");
+  const world = await page.evaluate(() => ({
+    width: window.__GAME_DEBUG__?.worldWidth ?? 960,
+    height: window.__GAME_DEBUG__?.worldHeight ?? 576,
+  }));
+  await page.mouse.move(
+    bounds.x + ((x + 0.5) * TILE_SIZE / world.width) * bounds.width,
+    bounds.y + ((y + 0.5) * TILE_SIZE / world.height) * bounds.height,
+  );
+}
+
 test("fantasy menu and battlefield produce a varied procedural canvas", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "River Outpost" })).toBeVisible();
@@ -132,4 +145,45 @@ test("humanoid atlas animates movement, hit and one-shot death without console e
   await expect.poll(() => canvas.getAttribute("data-monster-visual-states")).toContain(`${enemyId}:death:`);
   await expect.poll(() => canvas.getAttribute("data-monster-visual-states"), { timeout: 2_000 }).not.toContain(`${enemyId}:death:`);
   expect(consoleErrors).toEqual([]);
+});
+
+test("medieval tower preview, tracking, upgrade and sell remain visually stateful", async ({ page }, testInfo) => {
+  const browserErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
+  });
+  page.on("pageerror", (error) => browserErrors.push(`page: ${error.message}`));
+  await startGame(page);
+  const canvas = page.locator("canvas.game-canvas");
+  const basic = page.getByRole("button", { name: /^Basic tower/ });
+
+  await basic.click();
+  await moveToCell(page, canvas, 1, 9);
+  await expect.poll(() => canvas.getAttribute("data-tower-preview")).toBe("basic:valid");
+  await moveToCell(page, canvas, 4, 3);
+  await expect.poll(() => canvas.getAttribute("data-tower-preview")).toBe("basic:invalid");
+  await clickCell(page, canvas, 4, 4);
+  await expect.poll(() => canvas.getAttribute("data-tower-visual-architecture")).toBe("procedural-medieval-v1");
+  await expect.poll(() => canvas.getAttribute("data-tower-visual-states")).toContain("tower-1:basic:L1:idle:");
+
+  await page.keyboard.press("Escape");
+  await clickCell(page, canvas, 4, 4);
+  const panel = page.getByLabel("Selected tower");
+  await expect(panel.getByRole("heading", { name: "Warden's Ballista" })).toBeVisible();
+  await panel.getByRole("button", { name: "Upgrade · 100" }).click();
+  await expect.poll(() => canvas.getAttribute("data-tower-visual-states")).toContain("tower-1:basic:L2:");
+
+  const idleState = await canvas.getAttribute("data-tower-visual-states");
+  await page.getByRole("button", { name: /Start wave/ }).click();
+  await expect.poll(
+    () => canvas.getAttribute("data-tower-visual-states"),
+    { timeout: 15_000 },
+  ).toMatch(/tower-1:basic:L2:(tracking|firing):/);
+  expect(await canvas.getAttribute("data-tower-visual-states")).not.toBe(idleState);
+  await attachScreenshot(page, testInfo, "detailed-medieval-tower");
+
+  await clickCell(page, canvas, 4, 4);
+  await panel.getByRole("button", { name: "Sell · 125" }).click();
+  await expect.poll(() => page.evaluate(() => window.__GAME_DEBUG__?.towers.length ?? -1)).toBe(0);
+  expect(browserErrors).toEqual([]);
 });

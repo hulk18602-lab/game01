@@ -1,5 +1,9 @@
 /** Renders build-mode feedback without applying placement rules. */
 export class PlacementLayer {
+  constructor({ towerRenderer } = {}) {
+    this.towerRenderer = towerRenderer ?? null;
+  }
+
   render(context, state) {
     const selected = state.selectedTowerRange;
     if (selected) {
@@ -39,12 +43,22 @@ export class PlacementLayer {
     context.lineWidth = 2;
     context.stroke();
 
-    context.globalAlpha = 0.58;
-    context.fillStyle = preview.color;
-    context.beginPath();
-    context.arc(preview.position.x, preview.position.y, preview.radius, 0, Math.PI * 2);
-    context.fill();
-    context.globalAlpha = 1;
+    if (this.towerRenderer) {
+      context.globalAlpha = 1;
+      this.towerRenderer.drawPreview(
+        context,
+        preview,
+        state.visualTime ?? 0,
+        state.reducedMotion === true,
+      );
+    } else {
+      context.globalAlpha = 0.58;
+      context.fillStyle = preview.color;
+      context.beginPath();
+      context.arc(preview.position.x, preview.position.y, preview.radius, 0, Math.PI * 2);
+      context.fill();
+      context.globalAlpha = 1;
+    }
   }
 }
 

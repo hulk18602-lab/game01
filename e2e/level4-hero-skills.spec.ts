@@ -87,6 +87,12 @@ test("Level 4 Rally Aura applies and removes temporary effective tower stats", a
   const towerPoint = await cellPoint(canvas, 16, 11);
   await page.mouse.click(towerPoint.x, towerPoint.y);
   await page.waitForFunction(() => window.__GAME_DEBUG__?.towers.length === 1);
+  expect(await page.evaluate(() => window.__GAME_DEBUG__?.towerRenderer)).toEqual({
+    mode: "detailed",
+    renderedTowerCount: 1,
+    renderedTowerTypes: ["basic"],
+  });
+  await expect(canvas).toHaveAttribute("data-tower-visual-architecture", "procedural-medieval-v1");
   expect(await page.evaluate(() => {
     const tower = window.__GAME_DEBUG__!.towers[0]!;
     return {

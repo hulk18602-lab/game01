@@ -45,6 +45,12 @@ interface GameDebugApi {
   readonly canvasHeight: number;
   readonly reducedMotion: boolean;
   readonly activeEffects: number;
+  readonly towerRenderer: {
+    readonly mode: "detailed" | "fallback";
+    readonly renderedTowerCount: number;
+    readonly renderedTowerTypes: readonly string[];
+  };
+  setGold(amount: number): boolean;
   damageEnemy(id: string, amount: number): boolean;
   readonly hero: {
     readonly id: string;
@@ -362,6 +368,12 @@ export class GameApplication {
       get canvasHeight() { return application.#runtime.canvas.height; },
       get reducedMotion() { return application.#runtime.session.getState().reducedMotion; },
       get activeEffects() { return application.#runtime.session.getState().effects.length; },
+      get towerRenderer() { return application.#runtime.towerRendererDiagnostics; },
+      setGold(amount: number) {
+        if (!Number.isFinite(amount) || amount < 0) return false;
+        application.#runtime.session.getState().players.get("player")!.balance = Math.floor(amount);
+        return true;
+      },
       damageEnemy(id: string, amount: number) {
         const enemy = application.#runtime.session.getState().enemies.find((candidate) => candidate.id === id);
         if (!enemy || !Number.isFinite(amount) || amount < 0) return false;
