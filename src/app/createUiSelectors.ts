@@ -6,6 +6,7 @@ import {
   heroSkillDefinitions,
   heroSkillIds,
 } from "../content/heroes/heroSkills.js";
+import { eldrinVisual, visualTierForHeroLevel } from "../content/visuals/heroVisuals.js";
 import type {
   OverlayView,
   UiSelectors,
@@ -134,9 +135,16 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
         damage: hero.damage,
         range: hero.range,
         fireRate: hero.fireRate,
+        speed: hero.speed,
         target: target?.name ?? null,
         skillPoints: hero.skillPoints,
         auraRadius: hero.auraRadius,
+        portraitUrl: eldrinVisual.portraitUrl,
+        visualTier: visualTierForHeroLevel(hero.level),
+        activeSkills: heroSkillIds
+          .filter((skillId) => hero.skills[skillId] > 0)
+          .map((skillId) => `${heroSkillDefinitions[skillId].name} ${hero.skills[skillId]}`),
+        description: "A watchful ranger whose rune-bound arrows defend the Greenwood.",
       };
     },
     heroSkills: (state) => {

@@ -60,7 +60,8 @@ test("Level 3 archer moves, fires arrows and earns one normal kill reward", asyn
 
   const canvas = page.locator("canvas.game-canvas");
   await expect(canvas).toHaveAttribute("data-map-id", "map03");
-  await expect(page.getByRole("region", { name: "Hero panel" })).toContainText("Rowan");
+  await expect(canvas).toHaveAttribute("data-hero-rendered", "true");
+  await expect(page.getByRole("region", { name: "Hero panel" })).toContainText("Eldrin");
   expect(await page.evaluate(() => {
     const battlefield = document.querySelector("canvas.game-canvas");
     if (!battlefield) throw new Error("Canvas is missing");
@@ -85,7 +86,7 @@ test("Level 3 archer moves, fires arrows and earns one normal kill reward", asyn
     levelId: "level-3",
     mapId: "map03",
     pathLength: 1920,
-    heroId: "hero-rowan",
+    heroId: "hero-eldrin",
     heroIsTower: false,
   });
 
@@ -97,6 +98,11 @@ test("Level 3 archer moves, fires arrows and earns one normal kill reward", asyn
   };
   const point = await cellPoint(canvas, destinationCell.x, destinationCell.y);
   await page.mouse.click(point.x, point.y, { button: "right" });
+  await page.waitForFunction(
+    () => ["walk", "run"].includes(window.__GAME_DEBUG__?.hero?.animationState ?? ""),
+    null,
+    { timeout: 4_000 },
+  );
   await page.waitForFunction(
     (target) => {
       const position = window.__GAME_DEBUG__?.hero?.position;
@@ -123,6 +129,11 @@ test("Level 3 archer moves, fires arrows and earns one normal kill reward", asyn
   const goldAfterStart = await page.evaluate(() => window.__GAME_DEBUG__!.gold);
   await page.waitForFunction(
     () => window.__GAME_DEBUG__?.hero?.targetId !== null,
+    null,
+    { timeout: 8_000 },
+  );
+  await page.waitForFunction(
+    () => ["aim", "shoot"].includes(window.__GAME_DEBUG__?.hero?.animationState ?? ""),
     null,
     { timeout: 8_000 },
   );
@@ -155,5 +166,8 @@ test("Level 3 archer moves, fires arrows and earns one normal kill reward", asyn
   const hero = await page.evaluate(() => window.__GAME_DEBUG__!.hero);
   expect(hero?.level).toBe(1);
   expect(hero?.xp).toBeGreaterThanOrEqual(10);
+  expect(hero?.facingDirection).toMatch(/north|south|east|west/);
+  expect(hero?.animationFrame).toBeGreaterThanOrEqual(0);
+  expect(hero?.visualTier).toBe("scout");
   expect(browserErrors).toEqual([]);
 });

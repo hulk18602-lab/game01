@@ -24,6 +24,7 @@ import {
   Renderer,
 } from "../rendering/index.js";
 import MonsterSpriteRenderer from "../rendering/monsters/MonsterSpriteRenderer.js";
+import type { HeroVisualState } from "../rendering/hero/HeroVisualState.js";
 import { GameUi, type UiCommand } from "../ui/index.js";
 import type { AudioManager } from "../audio/AudioManager.js";
 import { createUiSelectors } from "./createUiSelectors.js";
@@ -39,6 +40,7 @@ interface RenderState {
   selectedHeroId: string | null;
   visualTime: number;
   reducedMotion: boolean;
+  phase: string;
   shakeOffset: { x: number; y: number };
 }
 
@@ -93,6 +95,7 @@ export class LevelRuntime {
   readonly #audio: AudioManager;
   readonly #camera: InstanceType<typeof Camera>;
   readonly #renderer: RendererPort;
+  readonly #heroLayer: HeroLayer;
   readonly #ui: GameUi<CampaignRuntime>;
   readonly #pointer: PointerInputAdapter;
   readonly #unsubscribePresentation: () => void;
@@ -108,6 +111,7 @@ export class LevelRuntime {
     selectedHeroId: null,
     visualTime: 0,
     reducedMotion: false,
+    phase: "menu",
     shakeOffset: { x: 0, y: 0 },
   };
   readonly #preventContextMenu = (event: Event): void => event.preventDefault();
@@ -151,6 +155,7 @@ export class LevelRuntime {
     const MapLayerAdapter = MapLayer as unknown as MapLayerConstructor;
     const DebugLayerAdapter = DebugLayer as unknown as DebugLayerConstructor;
     const monsterRenderer = new MonsterSpriteRenderer();
+    this.#heroLayer = new HeroLayer();
     void monsterRenderer.preload((progress) => {
       this.canvas.dataset.monsterLoadingProgress = progress.toFixed(2);
     });
@@ -161,7 +166,7 @@ export class LevelRuntime {
         new MapLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
         new PlacementLayer() as unknown as CanvasLayer,
         new EntityLayer({ monsterRenderer }) as unknown as CanvasLayer,
-        new HeroLayer() as unknown as CanvasLayer,
+        this.#heroLayer as unknown as CanvasLayer,
         new EffectLayer() as unknown as CanvasLayer,
         new DebugLayerAdapter({ grid: this.session.grid, converter: this.session.converter }),
       ],
@@ -216,6 +221,10 @@ export class LevelRuntime {
     this.session.setReducedMotion(reduced);
   }
 
+  get heroVisualState(): HeroVisualState {
+    return this.#heroLayer.visualState;
+  }
+
   render(): void {
     const state = this.session.getState();
     this.#renderState.runtimeTowers = state.runtimeTowers;
@@ -231,6 +240,7 @@ export class LevelRuntime {
       : (performance.now() - this.#visualStartedAt) / 1000;
     this.#renderState.visualTime = visualTime;
     this.#renderState.reducedMotion = state.reducedMotion;
+    this.#renderState.phase = this.session.phase;
     const shake = state.reducedMotion ? 0 : state.screenShake;
     this.#renderState.shakeOffset.x = shake === 0 ? 0 : Math.sin(visualTime * 47) * shake;
     this.#renderState.shakeOffset.y = shake === 0 ? 0 : Math.cos(visualTime * 39) * shake * 0.72;

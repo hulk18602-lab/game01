@@ -231,6 +231,16 @@
   border-color: rgb(134 239 172 / 54%);
 }
 .game-ui__hero-panel p { margin-bottom: 4px; }
+.game-ui__hero-portrait {
+  float: right;
+  width: 74px;
+  height: 74px;
+  margin: -4px 0 6px 12px;
+  object-fit: contain;
+  border: 1px solid rgb(217 249 157 / 58%);
+  border-radius: 10px;
+  background: radial-gradient(circle, rgb(63 98 18 / 36%), transparent 68%);
+}
 .game-ui__hero-skills {
   top: 280px;
   left: 14px;

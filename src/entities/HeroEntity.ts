@@ -1,4 +1,5 @@
 import type { Position } from "../game/types.js";
+import type { HeroDirection } from "../content/visuals/heroVisuals.js";
 import {
   createDefaultHeroSkills,
   heroSkillDefinitions,
@@ -29,13 +30,24 @@ export interface HeroEntityOptions {
   readonly skills?: Readonly<Partial<HeroSkillLevels>>;
 }
 
+export type HeroMovementState = "idle" | "walking" | "running";
+export type HeroCombatState = "idle" | "aiming" | "shooting";
+
+const orderedDirections: readonly HeroDirection[] = [
+  "east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east",
+];
+
 /** A mobile combatant. It deliberately does not implement or extend a tower entity. */
 export class HeroEntity {
   readonly kind = "hero";
   readonly id: string;
   readonly name: string;
   position: { x: number; y: number };
+  previousPosition: { x: number; y: number };
   moveTarget: { x: number; y: number } | null;
+  facingDirection: HeroDirection = "south";
+  movementState: HeroMovementState = "idle";
+  combatState: HeroCombatState = "idle";
   readonly speed: number;
   range: number;
   damage: number;
@@ -61,6 +73,10 @@ export class HeroEntity {
   moving = false;
   shotAnimation = 0;
   skillFeedback = 0;
+  attackElapsed = 0;
+  recoveryElapsed = 0;
+  readonly attackWindup = 0.18;
+  readonly attackRecovery = 0.12;
 
   readonly #baseRange: number;
   readonly #baseDamage: number;
@@ -74,6 +90,7 @@ export class HeroEntity {
     this.id = definition.id;
     this.name = definition.name;
     this.position = { ...options.position };
+    this.previousPosition = { ...options.position };
     this.moveTarget = options.moveTarget ? { ...options.moveTarget } : null;
     this.speed = definition.speed;
     this.projectileSpeed = definition.projectileSpeed;
@@ -154,6 +171,54 @@ export class HeroEntity {
     this.skillFeedback = Math.max(0, this.skillFeedback - deltaSeconds * 1.8);
   }
 
+  beginFrame(): void {
+    this.previousPosition = { ...this.position };
+  }
+
+  updateFacingFromVelocity(deadZone = 0.75): void {
+    const dx = this.position.x - this.previousPosition.x;
+    const dy = this.position.y - this.previousPosition.y;
+    if (Math.hypot(dx, dy) < deadZone) return;
+    this.#setFacing(Math.atan2(dy, dx));
+  }
+
+  updateFacingToward(target: Position, deadZone = 0.75): void {
+    const dx = target.x - this.position.x;
+    const dy = target.y - this.position.y;
+    if (Math.hypot(dx, dy) < deadZone) return;
+    this.#setFacing(Math.atan2(dy, dx));
+  }
+
+  directionToward(target: Position): HeroDirection {
+    const dx = target.x - this.position.x;
+    const dy = target.y - this.position.y;
+    if (Math.hypot(dx, dy) < 0.75) return this.facingDirection;
+    return this.#directionForAngle(Math.atan2(dy, dx));
+  }
+
+  setMovementState(state: HeroMovementState): void {
+    this.movementState = state;
+    this.moving = state !== "idle";
+  }
+
+  beginAiming(): void {
+    this.combatState = "aiming";
+    this.attackElapsed = 0;
+    this.recoveryElapsed = 0;
+  }
+
+  releaseShot(): void {
+    this.combatState = "shooting";
+    this.shotAnimation = 1;
+    this.recoveryElapsed = 0;
+  }
+
+  finishShot(): void {
+    this.combatState = "idle";
+    this.attackElapsed = 0;
+    this.recoveryElapsed = 0;
+  }
+
   get auraRadius(): number {
     return heroSkillDefinitions.rallyAura.levels[this.skills.rallyAura - 1]?.auraRadius ?? 0;
   }
@@ -180,6 +245,17 @@ export class HeroEntity {
     ).toFixed(2));
     this.chainCount = piercingArrow?.projectileTargets ?? 1;
     this.xpToNextLevel = xpRequiredForHeroLevel(this.level, this.#baseXpToNextLevel);
+  }
+
+  #setFacing(angle: number): void {
+    this.heading = angle;
+    this.facingDirection = this.#directionForAngle(angle);
+  }
+
+  #directionForAngle(angle: number): HeroDirection {
+    const normalized = (angle + Math.PI * 2) % (Math.PI * 2);
+    const index = Math.round(normalized / (Math.PI / 4)) % orderedDirections.length;
+    return orderedDirections[index] ?? this.facingDirection;
   }
 }
 

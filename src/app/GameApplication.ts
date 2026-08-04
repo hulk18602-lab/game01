@@ -57,6 +57,10 @@ interface GameDebugApi {
     readonly skillPoints: number;
     readonly skills: Readonly<Record<string, number>>;
     readonly auraRadius: number;
+    readonly facingDirection: string;
+    readonly animationState: string;
+    readonly animationFrame: number;
+    readonly visualTier: string;
     readonly arrowProjectiles: readonly ProjectileEntity[];
   } | null;
 }
@@ -378,6 +382,10 @@ export class GameApplication {
           skillPoints: hero.skillPoints,
           skills: { ...hero.skills },
           auraRadius: hero.auraRadius,
+          facingDirection: hero.facingDirection,
+          animationState: application.#runtime.heroVisualState.animation,
+          animationFrame: application.#runtime.heroVisualState.frame,
+          visualTier: application.#runtime.heroVisualState.visualTier,
           arrowProjectiles: application.#runtime.session.projectiles.filter(
             (projectile) => projectile.projectileType === "arrow",
           ),

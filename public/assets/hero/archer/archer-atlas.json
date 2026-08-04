@@ -1,0 +1,10 @@
+{
+  "id": "eldrin-warden",
+  "placeholder": true,
+  "frameWidth": 384,
+  "frameHeight": 384,
+  "atlasColumns": 8,
+  "directions": ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"],
+  "animations": ["idle", "walk", "run", "aim", "shoot", "hit", "level-up", "cast", "aura", "victory", "defeat"],
+  "note": "The bundled WebP is an original single-pose placeholder. Replace the WebP and frame indices with a licensed final atlas; the game contract remains unchanged."
+}
