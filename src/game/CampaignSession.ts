@@ -836,6 +836,18 @@ export class CampaignSession {
     this.#heroMovementInput = { x, y };
   }
 
+  /** Development-only visual regression hook; uses the canonical enemy factory. */
+  debugSpawnEnemy(type: string, progress: number): EnemyEntity {
+    const safeProgress = Math.max(0, Math.min(0.95, progress));
+    const enemy = this.#createEnemy(type, undefined, undefined, {
+      progress: safeProgress,
+      position: this.path.getPointAt(safeProgress),
+    });
+    this.#state.enemies.push(enemy);
+    this.#emit();
+    return enemy;
+  }
+
   placeSelectedTower(point: Position): Tower {
     const type = this.#state.selectedBuildType;
     if (!type) throw new CommandValidationError("Select a tower before placing it.");

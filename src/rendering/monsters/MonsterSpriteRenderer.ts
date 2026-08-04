@@ -1,7 +1,9 @@
 import {
   allMonsterVisuals,
   getMonsterVisual,
+  type AnimationClip,
   type MonsterAnimationState,
+  type MonsterAtlasMetadata,
   type MonsterDirection,
   type MonsterVisualDefinition,
 } from "../../content/visuals/monsterVisuals.js";
@@ -95,7 +97,7 @@ export class MonsterSpriteRenderer {
         state.stateSince = now;
       }
       const definition = getMonsterVisual(state.type);
-      const clip = definition.animations.death[state.direction];
+      const clip = this.#clip(definition, "death");
       if (now - state.deathStartedAt >= clipDuration(clip)) {
         this.#states.delete(id);
         continue;
@@ -109,6 +111,8 @@ export class MonsterSpriteRenderer {
       canvas.dataset.monsterLoadingProgress = this.assets.progress.toFixed(2);
       canvas.dataset.monsterVisualStates = debugStates.join(",");
       canvas.dataset.monsterSprites = this.assets.loadedCount > 0 ? "active" : "loading";
+      if (this.assets.allValid) canvas.dataset.monsterAtlasValid = "true";
+      else delete canvas.dataset.monsterAtlasValid;
     }
   }
 
@@ -188,13 +192,13 @@ export class MonsterSpriteRenderer {
   ): void {
     const asset = this.assets.get(definition.atlasUrl);
     const image = asset?.image ?? this.assets.placeholder;
-    const clip = definition.animations[state.animation][state.direction];
+    const clip = this.#clip(definition, state.animation);
     const frame = reducedMotion && clip.loop ? clip.frames[0] ?? 0 : frameAtTime(clip, now - state.stateSince);
     state.frame = frame;
-    const column = frame % definition.atlasColumns;
-    const row = Math.floor(frame / definition.atlasColumns);
-    const left = state.position.x - definition.displayWidth * definition.anchorX;
-    const top = state.position.y - definition.displayHeight * definition.anchorY;
+    const metadata = asset?.metadata ?? safeRenderMetadata;
+    const source = monsterSourceRectangle(metadata, frame);
+    const left = state.position.x - definition.displayWidth * metadata.anchor.x;
+    const top = state.position.y - definition.displayHeight * metadata.anchor.y;
 
     context.save();
     context.fillStyle = "rgba(15, 23, 42, .34)";
@@ -210,16 +214,18 @@ export class MonsterSpriteRenderer {
 
     if (state.boss) this.#drawBossAura(context, state, definition, now, reducedMotion);
     context.filter = this.#filter(state, now);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
     if (state.direction === "left") {
       context.translate(state.position.x * 2, 0);
       context.scale(-1, 1);
     }
     context.drawImage(
       image,
-      column * definition.frameWidth,
-      row * definition.frameHeight,
-      definition.frameWidth,
-      definition.frameHeight,
+      source.x,
+      source.y,
+      source.width,
+      source.height,
       left,
       top,
       definition.displayWidth,
@@ -237,6 +243,12 @@ export class MonsterSpriteRenderer {
     if (state.slowed) filters.push("hue-rotate(145deg)", "saturate(.7)");
     if (state.poisoned) filters.push("hue-rotate(55deg)", "saturate(1.35)");
     return filters.join(" ") || "none";
+  }
+
+  #clip(definition: MonsterVisualDefinition, state: MonsterAnimationState): AnimationClip {
+    const frames = this.assets.get(definition.atlasUrl)?.metadata.animations[state] ?? [0];
+    const timing = definition.animationTiming[state];
+    return { frames, fps: timing.fps, loop: timing.loop };
   }
 
   #drawOverlays(
@@ -296,7 +308,8 @@ export class MonsterSpriteRenderer {
     const width = Math.max(30, definition.displayWidth * 0.72);
     const height = state.boss ? 7 : 5;
     const x = state.position.x - width / 2;
-    const y = state.position.y - definition.displayHeight * definition.anchorY - 9;
+    const anchorY = this.assets.get(definition.atlasUrl)?.metadata.anchor.y ?? 0.9;
+    const y = state.position.y - definition.displayHeight * anchorY - 9;
     context.fillStyle = "rgba(15, 23, 42, .9)";
     context.fillRect(x - 1, y - 1, width + 2, height + 2);
     context.fillStyle = ratio > .6 ? "#22c55e" : ratio > .3 ? "#eab308" : "#ef4444";
@@ -306,6 +319,44 @@ export class MonsterSpriteRenderer {
       context.fillRect(x, y - 5, width * Math.min(1, state.shield / state.maxShield), 2);
     }
   }
+}
+
+const safeRenderMetadata: MonsterAtlasMetadata = {
+  schemaVersion: 2,
+  id: "safe-placeholder",
+  atlas: {
+    file: "safe-placeholder", width: 64, height: 64, columns: 1, rows: 1,
+    frameWidth: 64, frameHeight: 64, contentWidth: 64, contentHeight: 64, padding: 0,
+  },
+  animations: { idle: [0], walk: [0], attack: [0], hit: [0], death: [0] },
+  anchor: { x: 0.5, y: 0.9 },
+};
+
+export function monsterSourceRectangle(metadata: MonsterAtlasMetadata, frame: number): {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+} {
+  const { atlas } = metadata;
+  if (!Number.isInteger(frame) || frame < 0 || frame >= atlas.columns * atlas.rows) {
+    throw new RangeError(`Monster frame ${frame} is outside atlas ${metadata.id}.`);
+  }
+  const column = frame % atlas.columns;
+  const row = Math.floor(frame / atlas.columns);
+  const rectangle = {
+    x: column * atlas.frameWidth + atlas.padding,
+    y: row * atlas.frameHeight + atlas.padding,
+    width: atlas.contentWidth,
+    height: atlas.contentHeight,
+  };
+  if (![rectangle.x, rectangle.y, rectangle.width, rectangle.height].every(Number.isInteger)
+    || rectangle.x < 0 || rectangle.y < 0
+    || rectangle.x + rectangle.width > atlas.width
+    || rectangle.y + rectangle.height > atlas.height) {
+    throw new RangeError(`Monster frame ${frame} has an invalid source rectangle.`);
+  }
+  return rectangle;
 }
 
 export default MonsterSpriteRenderer;

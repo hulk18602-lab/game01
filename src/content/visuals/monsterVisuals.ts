@@ -7,41 +7,54 @@ export interface AnimationClip {
   readonly loop: boolean;
 }
 
-export type DirectionalAnimation = Readonly<Record<MonsterDirection, AnimationClip>>;
+export interface MonsterAtlasMetadata {
+  readonly schemaVersion: number;
+  readonly id: string;
+  readonly atlas: {
+    readonly file: string;
+    readonly width: number;
+    readonly height: number;
+    readonly columns: number;
+    readonly rows: number;
+    readonly frameWidth: number;
+    readonly frameHeight: number;
+    readonly contentWidth: number;
+    readonly contentHeight: number;
+    readonly padding: number;
+  };
+  readonly animations: Readonly<Record<MonsterAnimationState, readonly number[]>>;
+  readonly anchor: {
+    readonly x: number;
+    readonly y: number;
+  };
+}
+
+interface AnimationTiming {
+  readonly fps: number;
+  readonly loop: boolean;
+}
 
 export interface MonsterVisualDefinition {
   readonly id: string;
   readonly atlasUrl: string;
   readonly metadataUrl: string;
   readonly portraitUrl: string;
-  readonly frameWidth: number;
-  readonly frameHeight: number;
-  readonly atlasColumns: number;
   readonly displayWidth: number;
   readonly displayHeight: number;
-  readonly anchorX: number;
-  readonly anchorY: number;
   readonly shadowScale: number;
   readonly placeholder: boolean;
-  readonly animations: Readonly<Record<MonsterAnimationState, DirectionalAnimation>>;
+  readonly animationTiming: Readonly<Record<MonsterAnimationState, AnimationTiming>>;
 }
 
-const directions = (frames: readonly number[], fps: number, loop: boolean): DirectionalAnimation => {
-  const clip = Object.freeze({ frames: Object.freeze([...frames]), fps, loop });
-  return Object.freeze({ up: clip, down: clip, left: clip, right: clip });
-};
-
-const animations = (walkFps: number) => Object.freeze({
-  idle: directions([0, 1, 2, 3], 4, true),
-  walk: directions([4, 5, 6, 7], walkFps, true),
-  attack: directions([8, 9, 10, 11], 9, false),
-  hit: directions([12, 13, 14, 15], 12, false),
-  death: directions([16, 17, 18, 19], 7, false),
+const animationTiming = (walkFps: number) => Object.freeze({
+  idle: Object.freeze({ fps: 4, loop: true }),
+  walk: Object.freeze({ fps: walkFps, loop: true }),
+  attack: Object.freeze({ fps: 9, loop: false }),
+  hit: Object.freeze({ fps: 12, loop: false }),
+  death: Object.freeze({ fps: 7, loop: false }),
 });
 
 type VisualOptions = {
-  readonly width: number;
-  readonly height: number;
   readonly displayWidth: number;
   readonly displayHeight: number;
   readonly walkFps: number;
@@ -53,25 +66,20 @@ const visual = (id: string, options: VisualOptions): MonsterVisualDefinition => 
   atlasUrl: `/assets/monsters/${id}/atlas-placeholder.png`,
   metadataUrl: `/assets/monsters/${id}/atlas.json`,
   portraitUrl: `/assets/monsters/${id}/portrait-placeholder.png`,
-  frameWidth: options.width / 4,
-  frameHeight: options.height / 5,
-  atlasColumns: 4,
   displayWidth: options.displayWidth,
   displayHeight: options.displayHeight,
-  anchorX: 0.5,
-  anchorY: 0.9,
   shadowScale: options.shadowScale ?? 1,
   placeholder: true,
-  animations: animations(options.walkFps),
+  animationTiming: animationTiming(options.walkFps),
 });
 
 export const monsterVisuals = Object.freeze({
-  grunt: visual("grunt", { width: 1122, height: 1402, displayWidth: 52, displayHeight: 68, walkFps: 8 }),
-  runner: visual("runner", { width: 1122, height: 1402, displayWidth: 50, displayHeight: 64, walkFps: 13, shadowScale: 0.85 }),
-  tank: visual("tank", { width: 1402, height: 1122, displayWidth: 78, displayHeight: 76, walkFps: 5, shadowScale: 1.25 }),
-  armored: visual("armored", { width: 1122, height: 1402, displayWidth: 66, displayHeight: 72, walkFps: 7, shadowScale: 1.08 }),
-  regenerator: visual("regenerator", { width: 1122, height: 1402, displayWidth: 60, displayHeight: 72, walkFps: 7 }),
-  boss: visual("boss", { width: 1402, height: 1122, displayWidth: 104, displayHeight: 110, walkFps: 5, shadowScale: 1.45 }),
+  grunt: visual("grunt", { displayWidth: 52, displayHeight: 68, walkFps: 8 }),
+  runner: visual("runner", { displayWidth: 50, displayHeight: 64, walkFps: 13, shadowScale: 0.85 }),
+  tank: visual("tank", { displayWidth: 78, displayHeight: 76, walkFps: 5, shadowScale: 1.25 }),
+  armored: visual("armored", { displayWidth: 66, displayHeight: 72, walkFps: 7, shadowScale: 1.08 }),
+  regenerator: visual("regenerator", { displayWidth: 60, displayHeight: 72, walkFps: 7 }),
+  boss: visual("boss", { displayWidth: 104, displayHeight: 110, walkFps: 5, shadowScale: 1.45 }),
 } satisfies Record<string, MonsterVisualDefinition>);
 
 const aliases: Readonly<Record<string, keyof typeof monsterVisuals>> = Object.freeze({

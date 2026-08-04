@@ -9,6 +9,7 @@ import type { EnemyEntity, ProjectileEntity } from "../game/CampaignSession.js";
 import type { GameSpeed } from "../game/GameFlow.js";
 import { GameStorage } from "../game/persistence/GameStorage.js";
 import type { RuntimeTower } from "../game/index.js";
+import type { MonsterAtlasDiagnostic } from "../rendering/monsters/MonsterAssetLoader.js";
 import { KeyboardInputAdapter } from "../input/index.js";
 import type { UiCommand } from "../ui/index.js";
 import { isGameplayPhase } from "./createUiSelectors.js";
@@ -45,6 +46,7 @@ interface GameDebugApi {
   readonly canvasHeight: number;
   readonly reducedMotion: boolean;
   readonly activeEffects: number;
+  readonly monsterAtlases: readonly MonsterAtlasDiagnostic[];
   readonly towerRenderer: {
     readonly mode: "detailed" | "fallback";
     readonly renderedTowerCount: number;
@@ -52,6 +54,7 @@ interface GameDebugApi {
   };
   setGold(amount: number): boolean;
   damageEnemy(id: string, amount: number): boolean;
+  spawnEnemy(type: string, progress: number): string;
   readonly hero: {
     readonly id: string;
     readonly position: { readonly x: number; readonly y: number };
@@ -368,6 +371,7 @@ export class GameApplication {
       get canvasHeight() { return application.#runtime.canvas.height; },
       get reducedMotion() { return application.#runtime.session.getState().reducedMotion; },
       get activeEffects() { return application.#runtime.session.getState().effects.length; },
+      get monsterAtlases() { return application.#runtime.monsterAtlasDiagnostics; },
       get towerRenderer() { return application.#runtime.towerRendererDiagnostics; },
       setGold(amount: number) {
         if (!Number.isFinite(amount) || amount < 0) return false;
@@ -379,6 +383,9 @@ export class GameApplication {
         if (!enemy || !Number.isFinite(amount) || amount < 0) return false;
         enemy.takeDamage(amount, "true");
         return true;
+      },
+      spawnEnemy(type: string, progress: number) {
+        return application.#runtime.session.debugSpawnEnemy(type, progress).id;
       },
       get hero() {
         const hero = application.#runtime.session.hero;
