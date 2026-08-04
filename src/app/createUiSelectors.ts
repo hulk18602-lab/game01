@@ -164,6 +164,13 @@ export function createUiSelectors(session: CampaignSession): UiSelectors<Campaig
             nextBonus: next?.bonusText ?? "Maximum level reached",
             upgradeAvailable: blockedReason === null,
             blockedReason,
+            branch: definition.branch,
+            kind: definition.kind,
+            hotkey: definition.hotkey ?? null,
+            cooldown: definition.kind === "active" ? hero.abilityCooldowns[skillId as keyof typeof hero.abilityCooldowns] ?? 0 : 0,
+            prerequisiteText: definition.prerequisites.length > 0
+              ? definition.prerequisites.map((item) => `${heroSkillDefinitions[item.skillId].name} ${item.level}`).join(", ")
+              : "None",
           };
         }),
       };

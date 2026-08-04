@@ -5,7 +5,18 @@ export class StatusEffectSystem {
   apply(enemy, effect) {
     enemy.statusEffects ??= [];
     const existing = enemy.statusEffects.find((item) => item.type === effect.type);
-    if (existing) Object.assign(existing, effect, { remaining: effect.duration });
+    if (existing && effect.type === 'slow') {
+      existing.multiplier = Math.min(existing.multiplier ?? 1, effect.multiplier ?? 1);
+      existing.duration = Math.max(existing.duration ?? 0, effect.duration ?? 0);
+      existing.remaining = Math.max(existing.remaining ?? 0, effect.duration ?? 0);
+      existing.sourceId = effect.sourceId ?? existing.sourceId;
+    } else if (existing && effect.type === 'damageOverTime') {
+      existing.damagePerSecond = Math.max(existing.damagePerSecond ?? 0, effect.damagePerSecond ?? 0);
+      existing.damageType = effect.damageType ?? existing.damageType;
+      existing.duration = Math.max(existing.duration ?? 0, effect.duration ?? 0);
+      existing.remaining = Math.max(existing.remaining ?? 0, effect.duration ?? 0);
+      existing.sourceId = effect.sourceId ?? existing.sourceId;
+    } else if (existing) Object.assign(existing, effect, { remaining: effect.duration });
     else enemy.statusEffects.push({ ...effect, remaining: effect.duration });
     this.refreshDerivedProperties(enemy);
   }

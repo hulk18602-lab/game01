@@ -30,6 +30,7 @@ interface RenderEnemy {
   readonly phaseRemaining?: number;
   readonly summonInto?: string | null;
   readonly towerDebuff?: number;
+  readonly huntersMarked?: boolean;
 }
 
 interface PresentationState {
@@ -56,6 +57,7 @@ interface PresentationState {
   phased: boolean;
   summoner: boolean;
   towerDebuffer: boolean;
+  huntersMarked: boolean;
   direction: MonsterDirection;
   animation: MonsterAnimationState;
   stateSince: number;
@@ -153,6 +155,7 @@ export class MonsterSpriteRenderer {
         phased: false,
         summoner: false,
         towerDebuffer: false,
+        huntersMarked: false,
         direction: "right",
         animation: "idle",
         stateSince: now,
@@ -193,6 +196,7 @@ export class MonsterSpriteRenderer {
     state.phased = (enemy.phaseRemaining ?? 0) > 0;
     state.summoner = Boolean(enemy.summonInto);
     state.towerDebuffer = (enemy.towerDebuff ?? 1) < 1;
+    state.huntersMarked = enemy.huntersMarked === true;
 
     const nextAnimation = selectAnimationState({
       now,
@@ -310,6 +314,14 @@ export class MonsterSpriteRenderer {
       context.strokeStyle = "rgba(196, 181, 253, .72)";
       context.lineWidth = 2;
       context.beginPath(); context.ellipse(x, y, definition.displayWidth * .55, definition.displayHeight * .45, 0, 0, Math.PI * 2); context.stroke();
+    }
+    if (state.huntersMarked) {
+      context.strokeStyle = "#facc15";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(x - 8, y - 20); context.lineTo(x, y - 12); context.lineTo(x + 8, y - 20);
+      context.stroke();
+      context.beginPath(); context.arc(x, y - 12, 12, 0, Math.PI * 2); context.stroke();
     }
     if (state.hitUntil > now && state.armor > 0) {
       context.fillStyle = "#fef08a";

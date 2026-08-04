@@ -52,6 +52,8 @@ export class Enemy {
     this.debuffCooldown = overrides.debuffCooldown ?? definition.debuffCooldown ?? 0;
     this.debuffRadius = overrides.debuffRadius ?? definition.debuffRadius ?? 0;
     this.debuffTimer = overrides.debuffTimer ?? 0;
+    this.huntersMarked = false;
+    this.huntersMarkTowerBonus = 0;
     this.boss = overrides.boss ?? definition.boss ?? false;
     this.elite = overrides.elite ?? definition.elite ?? false;
     this.bossPhase = overrides.bossPhase ?? 1;

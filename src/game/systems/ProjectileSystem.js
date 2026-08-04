@@ -18,6 +18,7 @@ const createProjectile = () => ({
   projectileType: 'orb',
   rotation: 0,
   statusEffect: null,
+  statusEffects: null,
   spent: true,
 });
 
@@ -51,6 +52,7 @@ export class ProjectileSystem {
     created.projectileType = projectile.projectileType ?? 'orb';
     created.rotation = 0;
     created.statusEffect = projectile.statusEffect ?? null;
+    created.statusEffects = projectile.statusEffects ?? null;
     created.spent = false;
     this.projectiles.push(created);
     this.events.push({
@@ -114,6 +116,7 @@ export class ProjectileSystem {
       this.projectiles.splice(index, 1);
       projectile.spent = true;
       projectile.statusEffect = null;
+      projectile.statusEffects = null;
       if (this.pool.length < this.poolCapacity) this.pool.push(projectile);
     }
     return this.projectiles;
@@ -154,7 +157,10 @@ export class ProjectileSystem {
   applyDamageHit(projectile, victim, statusEffectSystem, damage) {
     const healthBefore = victim.health;
     const shieldBefore = victim.shield ?? 0;
-    const healthAfter = applyDamage(victim, damage, projectile.damageType);
+    const towerMarkBonus = projectile.sourceId.startsWith("tower-")
+      ? (victim.huntersMarkTowerBonus ?? 0)
+      : 0;
+    const healthAfter = applyDamage(victim, damage * (1 + towerMarkBonus), projectile.damageType);
     const shieldAfter = victim.shield ?? 0;
     const appliedDamage = healthBefore + shieldBefore - healthAfter - shieldAfter;
     if (appliedDamage > 0) {
@@ -192,6 +198,11 @@ export class ProjectileSystem {
         ...projectile.statusEffect,
         sourceId: projectile.sourceId,
       });
+    }
+    if (healthAfter > 0 && projectile.statusEffects && statusEffectSystem) {
+      for (const effect of projectile.statusEffects) {
+        statusEffectSystem.apply(victim, { ...effect, sourceId: projectile.sourceId });
+      }
     }
   }
 

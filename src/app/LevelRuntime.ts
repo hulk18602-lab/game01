@@ -38,6 +38,7 @@ interface RenderState {
   projectiles: readonly ProjectileEntity[];
   effects: readonly VisualEffect[];
   placementPreview: CampaignRuntime["placementPreview"];
+  heroAbilityPreview: CampaignRuntime["heroAbilityPreview"];
   selectedTowerRange: { readonly position: Position; readonly range: number } | null;
   selectedTowerId: string | null;
   hero: CampaignRuntime["hero"];
@@ -111,6 +112,7 @@ export class LevelRuntime {
     projectiles: [],
     effects: [],
     placementPreview: null,
+    heroAbilityPreview: null,
     selectedTowerRange: null,
     selectedTowerId: null,
     hero: null,
@@ -243,6 +245,7 @@ export class LevelRuntime {
     this.#renderState.projectiles = this.session.projectiles;
     this.#renderState.effects = state.effects;
     this.#renderState.placementPreview = state.placementPreview;
+    this.#renderState.heroAbilityPreview = state.heroAbilityPreview;
     this.#renderState.selectedTowerRange = this.session.selectedTowerRange;
     this.#renderState.selectedTowerId = state.selectedTowerId;
     this.#renderState.hero = state.hero;

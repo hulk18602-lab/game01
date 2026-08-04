@@ -251,6 +251,9 @@ export class GameApplication {
         case "upgrade-hero-skill":
           session.upgradeHeroSkill(command.skillId);
           break;
+        case "activate-hero-ability":
+          session.selectHeroAbility(command.skillId);
+          break;
         case "sell-tower":
           session.sellTower(command.towerId);
           break;
@@ -288,7 +291,7 @@ export class GameApplication {
     const session = this.#runtime.session;
     const state = session.getState();
     if (code === "Escape") {
-      if (state.selectedBuildType || state.selectedTowerId || state.selectedHeroId) {
+      if (state.selectedBuildType || state.selectedTowerId || state.selectedHeroId || state.selectedHeroAbility) {
         this.#run(() => session.cancelAction());
       } else if (isGameplayPhase(session.phase)) {
         this.#run(() => session.togglePause());
@@ -307,6 +310,17 @@ export class GameApplication {
     }
     if (code === "Space") {
       if (session.canStartWave) this.#run(() => session.startWave(true));
+      return;
+    }
+    const abilityByKey = code === "KeyQ"
+      ? "rainOfArrows"
+      : code === "KeyE"
+        ? "windStep"
+        : code === "KeyR"
+          ? "huntersMark"
+          : null;
+    if (abilityByKey) {
+      this.#run(() => session.selectHeroAbility(abilityByKey));
       return;
     }
     const tower = session.towerOptions.find((option) => `Digit${option.hotkey}` === code);
