@@ -73,6 +73,7 @@ export class MonsterSpriteRenderer {
   readonly #states = new Map<string, PresentationState>();
   readonly assets: MonsterAssetLoader;
   #loadingStarted = false;
+  #debugForcedFrame: number | null = null;
 
   constructor(loader = new MonsterAssetLoader()) {
     this.assets = loader;
@@ -81,6 +82,10 @@ export class MonsterSpriteRenderer {
   preload(onProgress?: (progress: number) => void): Promise<void> {
     this.#loadingStarted = true;
     return this.assets.preload(allMonsterVisuals, onProgress);
+  }
+
+  setDebugForcedFrame(frame: number | null): void {
+    this.#debugForcedFrame = frame;
   }
 
   render(
@@ -226,7 +231,8 @@ export class MonsterSpriteRenderer {
     const asset = this.assets.get(definition.atlasUrl);
     const image = asset?.image ?? this.assets.placeholder;
     const clip = this.#clip(definition, state.animation);
-    const frame = reducedMotion && clip.loop ? clip.frames[0] ?? 0 : frameAtTime(clip, now - state.stateSince);
+    const frame = this.#debugForcedFrame
+      ?? (reducedMotion && clip.loop ? clip.frames[0] ?? 0 : frameAtTime(clip, now - state.stateSince));
     state.frame = frame;
     const metadata = asset?.metadata ?? safeRenderMetadata;
     const source = monsterSourceRectangle(metadata, asset?.loaded ? frame : 0);

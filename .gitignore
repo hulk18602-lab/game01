@@ -5,3 +5,8 @@ node_modules/
 npm-debug.log*
 playwright-report/
 test-results/
+artifacts/monster-frame-cleanup/*
+!artifacts/monster-frame-cleanup/monster-frames-before.png
+!artifacts/monster-frame-cleanup/monster-frames-after.png
+!artifacts/monster-frame-cleanup/crowded-scene-before.png
+!artifacts/monster-frame-cleanup/crowded-scene-after.png

@@ -62,6 +62,2539 @@
     "file": "atlas-source-placeholder.png",
     "width": 1122,
     "height": 1402,
-    "extraction": "rounded proportional boundaries; centered horizontally and bottom-aligned per frame"
+    "extraction": "rounded proportional boundaries; centered horizontally and bottom-aligned; per-frame alpha connected-component cleanup"
+  },
+  "componentCleanup": {
+    "alphaThreshold": 8,
+    "minimumComponentArea": 4,
+    "maximumComponentGap": 12,
+    "boundaryMargin": 1,
+    "perFrameOverrides": {
+      "17": {
+        "maximumComponentGap": 110,
+        "allowBoundaryComponents": true
+      },
+      "18": {
+        "maximumComponentGap": 110,
+        "allowBoundaryComponents": true
+      },
+      "19": {
+        "maximumComponentGap": 110,
+        "allowBoundaryComponents": true
+      }
+    },
+    "connectivity": 8,
+    "mainComponentSelection": "alpha area + center/body/anchor-zone score",
+    "frameReports": [
+      {
+        "frame": 0,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9988,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18318,
+            "area": 18318,
+            "bounds": [
+              79,
+              29,
+              236,
+              276
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 12,
+            "area": 12,
+            "bounds": [
+              214,
+              102,
+              216,
+              107
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              126,
+              82,
+              127,
+              84
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              103,
+              261,
+              104,
+              262
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              182,
+              102,
+              182,
+              103
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              216,
+              91,
+              216,
+              91
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 1,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9986,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18196,
+            "area": 18196,
+            "bounds": [
+              75,
+              29,
+              232,
+              277
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 12,
+            "area": 12,
+            "bounds": [
+              209,
+              95,
+              210,
+              101
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              220,
+              72,
+              221,
+              75
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              118,
+              92,
+              120,
+              94
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              113,
+              97,
+              113,
+              98
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              112,
+              116,
+              112,
+              116
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              111,
+              103,
+              111,
+              103
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 2,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9999,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18387,
+            "area": 18387,
+            "bounds": [
+              72,
+              27,
+              223,
+              277
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              115,
+              82,
+              115,
+              82
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 3,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9982,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18959,
+            "area": 18959,
+            "bounds": [
+              39,
+              29,
+              212,
+              277
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 14,
+            "area": 14,
+            "bounds": [
+              200,
+              71,
+              201,
+              80
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              193,
+              87,
+              193,
+              93
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              193,
+              79,
+              193,
+              83
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              189,
+              48,
+              189,
+              51
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              189,
+              54,
+              189,
+              57
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              95,
+              82,
+              95,
+              82
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 4,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9736,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19439,
+            "area": 19439,
+            "bounds": [
+              57,
+              40,
+              251,
+              264
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 520,
+            "area": 520,
+            "bounds": [
+              230,
+              85,
+              251,
+              132
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              239,
+              83,
+              240,
+              87
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              145,
+              84,
+              145,
+              84
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 5,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9992,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19449,
+            "area": 19449,
+            "bounds": [
+              52,
+              42,
+              250,
+              264
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              237,
+              82,
+              238,
+              85
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              236,
+              87,
+              237,
+              91
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              126,
+              95,
+              126,
+              95
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              123,
+              96,
+              123,
+              96
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 6,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9993,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19298,
+            "area": 19298,
+            "bounds": [
+              31,
+              43,
+              229,
+              264
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              218,
+              84,
+              219,
+              86
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              112,
+              87,
+              113,
+              88
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              217,
+              90,
+              217,
+              92
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              201,
+              109,
+              201,
+              110
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              201,
+              53,
+              201,
+              53
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 7,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9996,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18640,
+            "area": 18640,
+            "bounds": [
+              24,
+              53,
+              222,
+              264
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              206,
+              98,
+              207,
+              101
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              152,
+              128,
+              152,
+              129
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              93,
+              102,
+              93,
+              102
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 8,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.982,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 18836,
+            "area": 18836,
+            "bounds": [
+              37,
+              34,
+              231,
+              248
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 331,
+            "area": 331,
+            "bounds": [
+              216,
+              51,
+              233,
+              94
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              231,
+              54,
+              232,
+              56
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              98,
+              89,
+              98,
+              91
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              96,
+              88,
+              96,
+              90
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              162,
+              102,
+              163,
+              102
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              66,
+              168,
+              66,
+              168
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              227,
+              97,
+              227,
+              97
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              233,
+              41,
+              233,
+              41
+            ],
+            "gapToMain": 1,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 9,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9969,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 17485,
+            "area": 17485,
+            "bounds": [
+              4,
+              77,
+              279,
+              248
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 13,
+            "area": 13,
+            "bounds": [
+              262,
+              89,
+              265,
+              93
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 11,
+            "area": 11,
+            "bounds": [
+              228,
+              127,
+              231,
+              131
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              213,
+              88,
+              216,
+              90
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              272,
+              131,
+              274,
+              133
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              266,
+              139,
+              269,
+              141
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              274,
+              101,
+              276,
+              102
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              249,
+              143,
+              251,
+              143
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              235,
+              75,
+              235,
+              76
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              205,
+              101,
+              205,
+              101
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              259,
+              132,
+              259,
+              132
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 10,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9863,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 16896,
+            "area": 16896,
+            "bounds": [
+              20,
+              74,
+              252,
+              248
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 103,
+            "area": 103,
+            "bounds": [
+              0,
+              111,
+              21,
+              119
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 45,
+            "area": 45,
+            "bounds": [
+              215,
+              194,
+              219,
+              213
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 32,
+            "area": 32,
+            "bounds": [
+              30,
+              227,
+              38,
+              239
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 13,
+            "area": 13,
+            "bounds": [
+              217,
+              187,
+              219,
+              192
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              187,
+              72,
+              193,
+              76
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              221,
+              160,
+              224,
+              161
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              220,
+              83,
+              224,
+              87
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              243,
+              114,
+              245,
+              119
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              224,
+              192,
+              224,
+              194
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              230,
+              199,
+              232,
+              199
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              235,
+              199,
+              236,
+              199
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 12,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              246,
+              188,
+              246,
+              189
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 13,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              241,
+              109,
+              241,
+              110
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 16,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              226,
+              197,
+              226,
+              197
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 18,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              247,
+              124,
+              247,
+              124
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 14,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              11,
+              99,
+              11,
+              100
+            ],
+            "gapToMain": 8,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 15,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              10,
+              132,
+              11,
+              133
+            ],
+            "gapToMain": 8,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 17,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              256,
+              190,
+              256,
+              190
+            ],
+            "gapToMain": 3,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 11,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9858,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 19308,
+            "area": 19308,
+            "bounds": [
+              12,
+              24,
+              254,
+              248
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 94,
+            "area": 94,
+            "bounds": [
+              244,
+              68,
+              260,
+              88
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 58,
+            "area": 58,
+            "bounds": [
+              185,
+              103,
+              192,
+              116
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 40,
+            "area": 40,
+            "bounds": [
+              173,
+              110,
+              177,
+              125
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 21,
+            "area": 21,
+            "bounds": [
+              236,
+              53,
+              239,
+              63
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 13,
+            "area": 13,
+            "bounds": [
+              167,
+              97,
+              169,
+              102
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 14,
+            "area": 14,
+            "bounds": [
+              235,
+              133,
+              240,
+              137
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 13,
+            "area": 13,
+            "bounds": [
+              221,
+              67,
+              225,
+              70
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 7,
+            "area": 7,
+            "bounds": [
+              151,
+              63,
+              153,
+              67
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              225,
+              141,
+              227,
+              143
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              192,
+              122,
+              194,
+              123
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              253,
+              118,
+              254,
+              119
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 12,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              215,
+              40,
+              215,
+              41
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 13,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              235,
+              50,
+              235,
+              51
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 14,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              216,
+              132,
+              216,
+              132
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 15,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              245,
+              127,
+              245,
+              127
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 12,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9982,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 16774,
+            "area": 16774,
+            "bounds": [
+              56,
+              34,
+              212,
+              217
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              181,
+              70,
+              184,
+              73
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              195,
+              70,
+              197,
+              72
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              122,
+              32,
+              123,
+              33
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              116,
+              53,
+              117,
+              54
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              195,
+              62,
+              196,
+              63
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              146,
+              40,
+              147,
+              41
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              210,
+              91,
+              211,
+              91
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              214,
+              61,
+              215,
+              62
+            ],
+            "gapToMain": 1,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              105,
+              59,
+              105,
+              59
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              197,
+              104,
+              197,
+              104
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              198,
+              78,
+              198,
+              78
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 12,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              131,
+              34,
+              131,
+              34
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 13,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9967,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 15595,
+            "area": 15595,
+            "bounds": [
+              34,
+              38,
+              177,
+              217
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 19,
+            "area": 19,
+            "bounds": [
+              91,
+              46,
+              94,
+              51
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 13,
+            "area": 13,
+            "bounds": [
+              170,
+              97,
+              177,
+              98
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              174,
+              108,
+              177,
+              110
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              167,
+              111,
+              168,
+              112
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              162,
+              111,
+              164,
+              112
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              172,
+              120,
+              173,
+              120
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              178,
+              104,
+              178,
+              104
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              179,
+              84,
+              179,
+              84
+            ],
+            "gapToMain": 1,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 9,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              279,
+              183,
+              279,
+              183
+            ],
+            "gapToMain": 101,
+            "reasons": [
+              "detached at neighboring source-cell side",
+              "small component beyond maximum gap",
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 14,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9981,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 16596,
+            "area": 16596,
+            "bounds": [
+              0,
+              59,
+              214,
+              218
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 9,
+            "area": 9,
+            "bounds": [
+              183,
+              178,
+              184,
+              182
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              99,
+              61,
+              100,
+              65
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              162,
+              112,
+              164,
+              113
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              150,
+              134,
+              151,
+              135
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              170,
+              125,
+              171,
+              126
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              102,
+              63,
+              102,
+              64
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              99,
+              58,
+              99,
+              59
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              158,
+              131,
+              158,
+              131
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              103,
+              66,
+              103,
+              66
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 15,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9986,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 15554,
+            "area": 15554,
+            "bounds": [
+              4,
+              20,
+              184,
+              217
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 5,
+            "area": 5,
+            "bounds": [
+              50,
+              58,
+              52,
+              59
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              173,
+              47,
+              174,
+              48
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              172,
+              75,
+              173,
+              76
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              99,
+              66,
+              100,
+              67
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              46,
+              138,
+              46,
+              139
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              37,
+              63,
+              37,
+              64
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              30,
+              118,
+              31,
+              118
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              126,
+              77,
+              126,
+              77
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              102,
+              77,
+              102,
+              77
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 16,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9996,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 16833,
+            "area": 16833,
+            "bounds": [
+              42,
+              23,
+              230,
+              213
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              113,
+              73,
+              114,
+              74
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              123,
+              55,
+              123,
+              55
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              117,
+              25,
+              117,
+              25
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              192,
+              34,
+              192,
+              34
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 17,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.9962,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 13318,
+            "area": 13318,
+            "bounds": [
+              13,
+              96,
+              264,
+              217
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 21,
+            "area": 21,
+            "bounds": [
+              276,
+              194,
+              279,
+              203
+            ],
+            "gapToMain": 11,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 10,
+            "area": 10,
+            "bounds": [
+              108,
+              90,
+              111,
+              94
+            ],
+            "gapToMain": 1,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              216,
+              203,
+              217,
+              207
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              112,
+              65,
+              113,
+              68
+            ],
+            "gapToMain": 27,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              115,
+              86,
+              116,
+              88
+            ],
+            "gapToMain": 7,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              112,
+              100,
+              112,
+              101
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              216,
+              201,
+              216,
+              201
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              221,
+              189,
+              221,
+              189
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": []
+      },
+      {
+        "frame": 18,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.993,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 11096,
+            "area": 11096,
+            "bounds": [
+              0,
+              140,
+              250,
+              220
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 38,
+            "area": 38,
+            "bounds": [
+              84,
+              112,
+              89,
+              125
+            ],
+            "gapToMain": 14,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 19,
+            "area": 19,
+            "bounds": [
+              273,
+              204,
+              280,
+              207
+            ],
+            "gapToMain": 22,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 12,
+            "area": 12,
+            "bounds": [
+              178,
+              144,
+              181,
+              147
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              98,
+              132,
+              100,
+              133
+            ],
+            "gapToMain": 6,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 4,
+            "area": 4,
+            "bounds": [
+              279,
+              217,
+              280,
+              218
+            ],
+            "gapToMain": 28,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              138,
+              143,
+              138,
+              143
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 6,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              92,
+              130,
+              93,
+              131
+            ],
+            "gapToMain": 8,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 8,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              89,
+              127,
+              89,
+              127
+            ],
+            "gapToMain": 12,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      },
+      {
+        "frame": 19,
+        "mainComponent": 0,
+        "mainAlphaShare": 0.96,
+        "kept": [
+          {
+            "index": 0,
+            "alphaArea": 10488,
+            "area": 10488,
+            "bounds": [
+              0,
+              152,
+              234,
+              225
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 1,
+            "alphaArea": 126,
+            "area": 126,
+            "bounds": [
+              168,
+              123,
+              182,
+              149
+            ],
+            "gapToMain": 2,
+            "reasons": []
+          },
+          {
+            "index": 2,
+            "alphaArea": 87,
+            "area": 87,
+            "bounds": [
+              119,
+              120,
+              136,
+              138
+            ],
+            "gapToMain": 13,
+            "reasons": []
+          },
+          {
+            "index": 3,
+            "alphaArea": 85,
+            "area": 85,
+            "bounds": [
+              179,
+              111,
+              193,
+              122
+            ],
+            "gapToMain": 29,
+            "reasons": []
+          },
+          {
+            "index": 4,
+            "alphaArea": 51,
+            "area": 51,
+            "bounds": [
+              52,
+              138,
+              61,
+              151
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 5,
+            "alphaArea": 28,
+            "area": 28,
+            "bounds": [
+              135,
+              145,
+              141,
+              152
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 6,
+            "alphaArea": 12,
+            "area": 12,
+            "bounds": [
+              74,
+              152,
+              76,
+              157
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          },
+          {
+            "index": 7,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              134,
+              141,
+              137,
+              143
+            ],
+            "gapToMain": 8,
+            "reasons": []
+          },
+          {
+            "index": 8,
+            "alphaArea": 8,
+            "area": 8,
+            "bounds": [
+              190,
+              106,
+              192,
+              108
+            ],
+            "gapToMain": 43,
+            "reasons": []
+          },
+          {
+            "index": 9,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              127,
+              117,
+              129,
+              119
+            ],
+            "gapToMain": 32,
+            "reasons": []
+          },
+          {
+            "index": 10,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              127,
+              68,
+              128,
+              70
+            ],
+            "gapToMain": 81,
+            "reasons": []
+          },
+          {
+            "index": 11,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              116,
+              92,
+              118,
+              94
+            ],
+            "gapToMain": 57,
+            "reasons": []
+          },
+          {
+            "index": 12,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              200,
+              99,
+              201,
+              102
+            ],
+            "gapToMain": 49,
+            "reasons": []
+          },
+          {
+            "index": 13,
+            "alphaArea": 6,
+            "area": 6,
+            "bounds": [
+              64,
+              144,
+              66,
+              147
+            ],
+            "gapToMain": 4,
+            "reasons": []
+          },
+          {
+            "index": 15,
+            "alphaArea": 2,
+            "area": 2,
+            "bounds": [
+              200,
+              151,
+              201,
+              151
+            ],
+            "gapToMain": 0,
+            "reasons": []
+          }
+        ],
+        "removed": [
+          {
+            "index": 14,
+            "alphaArea": 3,
+            "area": 3,
+            "bounds": [
+              178,
+              45,
+              179,
+              46
+            ],
+            "gapToMain": 105,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          },
+          {
+            "index": 16,
+            "alphaArea": 1,
+            "area": 1,
+            "bounds": [
+              48,
+              138,
+              48,
+              138
+            ],
+            "gapToMain": 13,
+            "reasons": [
+              "sub-threshold detached component"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

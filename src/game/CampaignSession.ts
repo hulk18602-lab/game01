@@ -914,6 +914,14 @@ export class CampaignSession {
     return enemy;
   }
 
+  /** Development-only presentation reset for deterministic visual baselines. */
+  debugClearPresentationEffects(): void {
+    this.#effectPool.clear();
+    this.#state.effects = this.#effectPool.effects;
+    this.#state.message = null;
+    this.#emit();
+  }
+
   /** Development-only terminal transition used to keep unlock E2E coverage fast. */
   debugCompleteLevel(): void {
     if (this.phase === "victory" || this.phase === "defeat") return;

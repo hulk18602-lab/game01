@@ -244,6 +244,11 @@ export class LevelRuntime {
     return this.#monsterRenderer.assets.diagnostics;
   }
 
+  renderMonsterFrameForDebug(frame: number | null): void {
+    this.#monsterRenderer.setDebugForcedFrame(frame);
+    this.render();
+  }
+
   render(): void {
     const state = this.session.getState();
     this.#renderState.runtimeTowers = state.runtimeTowers;

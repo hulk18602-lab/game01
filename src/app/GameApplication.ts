@@ -57,6 +57,8 @@ interface GameDebugApi {
   damageEnemy(id: string, amount: number): boolean;
   grantHeroXp(amount: number): number;
   spawnEnemy(type: string, progress?: number): string;
+  renderMonsterFrame(frame: number | null): void;
+  clearPresentationEffects(): void;
   completeLevel(): void;
   readonly hero: {
     readonly id: string;
@@ -414,6 +416,13 @@ export class GameApplication {
       },
       spawnEnemy(type: string, progress?: number) {
         return application.#runtime.session.debugSpawnEnemy(type, progress).id;
+      },
+      renderMonsterFrame(frame: number | null) {
+        if (frame !== null && (!Number.isInteger(frame) || frame < 0 || frame >= 20)) return;
+        application.#runtime.renderMonsterFrameForDebug(frame);
+      },
+      clearPresentationEffects() {
+        application.#runtime.session.debugClearPresentationEffects();
       },
       completeLevel() {
         application.#runtime.session.debugCompleteLevel();

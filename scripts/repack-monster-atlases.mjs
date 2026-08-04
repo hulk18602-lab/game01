@@ -7,6 +7,23 @@ const ids = ["grunt", "runner", "tank", "armored", "regenerator", "boss"];
 const columns = 4;
 const rows = 5;
 const padding = 2;
+const defaultCleanupPolicy = Object.freeze({
+  alphaThreshold: 8,
+  minimumComponentArea: 4,
+  maximumComponentGap: 12,
+  boundaryMargin: 1,
+});
+const cleanupOverrides = Object.freeze({
+  grunt: Object.freeze({
+    16: Object.freeze({ maximumComponentGap: 20 }),
+  }),
+  regenerator: Object.freeze({
+    // The collapsing caster intentionally leaves detached staff and dissolve particles.
+    17: Object.freeze({ maximumComponentGap: 110, allowBoundaryComponents: true }),
+    18: Object.freeze({ maximumComponentGap: 110, allowBoundaryComponents: true }),
+    19: Object.freeze({ maximumComponentGap: 110, allowBoundaryComponents: true }),
+  }),
+});
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
@@ -19,7 +36,11 @@ try {
     const metadataPath = path.join(directory, "atlas.json");
     const source = await readFile(sourcePath);
     const dataUrl = `data:image/png;base64,${source.toString("base64")}`;
-    const packed = await page.evaluate(async ({ dataUrl, columns, rows, padding }) => {
+    const componentPolicy = {
+      ...defaultCleanupPolicy,
+      perFrameOverrides: cleanupOverrides[id] ?? {},
+    };
+    const packed = await page.evaluate(async ({ dataUrl, columns, rows, padding, componentPolicy }) => {
       const image = new Image();
       image.src = dataUrl;
       await image.decode();
@@ -104,6 +125,144 @@ try {
           }
         }
       }
+      const frameReports = [];
+      const componentGap = (leftComponent, rightComponent) => {
+        const gapX = Math.max(
+          0,
+          leftComponent.minX - rightComponent.maxX - 1,
+          rightComponent.minX - leftComponent.maxX - 1,
+        );
+        const gapY = Math.max(
+          0,
+          leftComponent.minY - rightComponent.maxY - 1,
+          rightComponent.minY - leftComponent.maxY - 1,
+        );
+        return Math.hypot(gapX, gapY);
+      };
+      for (let frame = 0; frame < columns * rows; frame += 1) {
+        const column = frame % columns;
+        const row = Math.floor(frame / columns);
+        const left = column * frameWidth + padding;
+        const top = row * frameHeight + padding;
+        const right = left + contentWidth - 1;
+        const bottom = top + contentHeight - 1;
+        const occupied = new Uint8Array(contentWidth * contentHeight);
+        for (let localY = 0; localY < contentHeight; localY += 1) {
+          for (let localX = 0; localX < contentWidth; localX += 1) {
+            const pixel = (top + localY) * canvas.width + left + localX;
+            occupied[localY * contentWidth + localX] =
+              pixels.data[pixel * 4 + 3] >= componentPolicy.alphaThreshold ? 1 : 0;
+          }
+        }
+        const visited = new Uint8Array(occupied.length);
+        const components = [];
+        for (let seed = 0; seed < occupied.length; seed += 1) {
+          if (!occupied[seed] || visited[seed]) continue;
+          const queue = [seed];
+          const componentPixels = [];
+          visited[seed] = 1;
+          let alphaArea = 0;
+          let minX = contentWidth;
+          let minY = contentHeight;
+          let maxX = 0;
+          let maxY = 0;
+          for (let head = 0; head < queue.length; head += 1) {
+            const local = queue[head];
+            const localX = local % contentWidth;
+            const localY = Math.floor(local / contentWidth);
+            const pixel = (top + localY) * canvas.width + left + localX;
+            componentPixels.push(pixel);
+            alphaArea += pixels.data[pixel * 4 + 3] / 255;
+            minX = Math.min(minX, localX);
+            minY = Math.min(minY, localY);
+            maxX = Math.max(maxX, localX);
+            maxY = Math.max(maxY, localY);
+            for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+              for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+                const nextX = localX + offsetX;
+                const nextY = localY + offsetY;
+                if ((offsetX === 0 && offsetY === 0) || nextX < 0 || nextY < 0
+                  || nextX >= contentWidth || nextY >= contentHeight) continue;
+                const next = nextY * contentWidth + nextX;
+                if (!occupied[next] || visited[next]) continue;
+                visited[next] = 1;
+                queue.push(next);
+              }
+            }
+          }
+          const bodyCenterX = (minX + maxX) / 2;
+          const bodyCenterY = (minY + maxY) / 2;
+          const centrality = 1 - Math.min(1, Math.abs(bodyCenterX - contentWidth / 2) / (contentWidth / 2));
+          const intersectsBodyZone = maxX >= contentWidth * 0.22 && minX <= contentWidth * 0.78
+            && maxY >= contentHeight * 0.18 && minY <= contentHeight * 0.94;
+          const reachesAnchorZone = maxY >= contentHeight * 0.55;
+          const score = alphaArea
+            * (1 + centrality * 0.12 + (intersectsBodyZone ? 0.18 : 0) + (reachesAnchorZone ? 0.08 : 0));
+          components.push({
+            pixels: componentPixels,
+            area: componentPixels.length,
+            alphaArea,
+            minX, minY, maxX, maxY,
+            score,
+          });
+        }
+        components.sort((first, second) => second.score - first.score);
+        const main = components[0];
+        if (!main) throw new Error(`Frame ${frame} contains no opaque monster silhouette`);
+        const override = componentPolicy.perFrameOverrides[String(frame)] ?? {};
+        const maximumComponentGap = override.maximumComponentGap ?? componentPolicy.maximumComponentGap;
+        const minimumComponentArea = override.minimumComponentArea ?? componentPolicy.minimumComponentArea;
+        const keepComponents = new Set(override.keepComponents ?? []);
+        const removeComponents = new Set(override.removeComponents ?? []);
+        const removed = [];
+        const kept = [];
+        for (let index = 0; index < components.length; index += 1) {
+          const component = components[index];
+          const gap = index === 0 ? 0 : componentGap(component, main);
+          const touchesTop = component.minY <= componentPolicy.boundaryMargin;
+          const touchesSide = component.minX <= componentPolicy.boundaryMargin
+            || component.maxX >= contentWidth - 1 - componentPolicy.boundaryMargin;
+          const aboveMain = component.maxY < main.minY;
+          const tooRemote = gap > maximumComponentGap
+            && component.alphaArea < main.alphaArea * 0.12;
+          const tooSmallAndDetached = component.alphaArea < minimumComponentArea && gap > 2;
+          const boundaryFragment = index !== 0
+            && ((touchesTop && aboveMain)
+              || (touchesSide && gap > maximumComponentGap && !override.allowBoundaryComponents));
+          const reasons = [];
+          if (removeComponents.has(index)) reasons.push("per-frame override");
+          if (touchesTop && aboveMain) reasons.push("detached above main silhouette at source-cell boundary");
+          if (touchesSide && gap > maximumComponentGap && !override.allowBoundaryComponents) {
+            reasons.push("detached at neighboring source-cell side");
+          }
+          if (tooRemote) reasons.push("small component beyond maximum gap");
+          if (tooSmallAndDetached) reasons.push("sub-threshold detached component");
+          const shouldRemove = index !== 0 && !keepComponents.has(index)
+            && (removeComponents.has(index) || boundaryFragment || tooRemote || tooSmallAndDetached);
+          const report = {
+            index,
+            alphaArea: Math.round(component.alphaArea),
+            area: component.area,
+            bounds: [component.minX, component.minY, component.maxX, component.maxY],
+            gapToMain: Math.round(gap),
+            reasons,
+          };
+          if (shouldRemove) {
+            removed.push(report);
+            for (const pixel of component.pixels) pixels.data[pixel * 4 + 3] = 0;
+          } else {
+            kept.push(report);
+          }
+        }
+        const significantAlpha = kept.reduce((sum, component) => sum + component.alphaArea, 0);
+        frameReports.push({
+          frame,
+          mainComponent: 0,
+          mainAlphaShare: Number((main.alphaArea / Math.max(1, significantAlpha)).toFixed(4)),
+          kept,
+          removed,
+        });
+      }
       context.putImageData(pixels, 0, 0);
       return {
         png: canvas.toDataURL("image/png").split(",")[1],
@@ -115,8 +274,14 @@ try {
         frameHeight,
         contentWidth,
         contentHeight,
+        componentCleanup: {
+          ...componentPolicy,
+          connectivity: 8,
+          mainComponentSelection: "alpha area + center/body/anchor-zone score",
+          frameReports,
+        },
       };
-    }, { dataUrl, columns, rows, padding });
+    }, { dataUrl, columns, rows, padding, componentPolicy });
 
     const previous = JSON.parse(await readFile(metadataPath, "utf8"));
     const metadata = {
@@ -138,8 +303,9 @@ try {
         file: "atlas-source-placeholder.png",
         width: packed.sourceWidth,
         height: packed.sourceHeight,
-        extraction: "rounded proportional boundaries; centered horizontally and bottom-aligned per frame",
+        extraction: "rounded proportional boundaries; centered horizontally and bottom-aligned; per-frame alpha connected-component cleanup",
       },
+      componentCleanup: packed.componentCleanup,
     };
     await writeFile(outputPath, Buffer.from(packed.png, "base64"));
     await writeFile(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8");
