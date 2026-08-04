@@ -125,6 +125,7 @@ export class MonsterSpriteRenderer {
       canvas.dataset.monsterLoadingProgress = this.assets.progress.toFixed(2);
       canvas.dataset.monsterVisualStates = debugStates.join(",");
       canvas.dataset.monsterSprites = this.assets.loadedCount > 0 ? "active" : "loading";
+      canvas.dataset.monsterVisualArchitecture = "humanoid-sprite-v1";
     }
   }
 

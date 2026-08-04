@@ -220,7 +220,7 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
     waves: level08WaveDefinitions as unknown as readonly WaveDefinition[],
     availableTowerTypes: serpentTowers,
     availableEnemyTypes: eclipseEnemies,
-    heroConfig: Object.freeze({ ...eldrinStats, spawnCell: Object.freeze({ x: 16, y: 12 }) }),
+    heroConfig: Object.freeze({ ...eldrinStats, spawnCell: Object.freeze({ x: 16, y: 10 }) }),
     unlocksLevelId: null,
     contentVersion: 1,
   }),

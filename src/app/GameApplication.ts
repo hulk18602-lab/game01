@@ -45,6 +45,7 @@ interface GameDebugApi {
   readonly canvasHeight: number;
   readonly reducedMotion: boolean;
   readonly activeEffects: number;
+  readonly selectedHeroAbility: string | null;
   readonly towerRenderer: {
     readonly mode: "detailed" | "fallback";
     readonly renderedTowerCount: number;
@@ -52,6 +53,9 @@ interface GameDebugApi {
   };
   setGold(amount: number): boolean;
   damageEnemy(id: string, amount: number): boolean;
+  grantHeroXp(amount: number): number;
+  spawnEnemy(type: string, progress?: number): string;
+  completeLevel(): void;
   readonly hero: {
     readonly id: string;
     readonly position: { readonly x: number; readonly y: number };
@@ -62,6 +66,8 @@ interface GameDebugApi {
     readonly xpToNextLevel: number;
     readonly skillPoints: number;
     readonly skills: Readonly<Record<string, number>>;
+    readonly abilityCooldowns: Readonly<Record<string, number>>;
+    readonly markedTargetId: string | null;
     readonly auraRadius: number;
     readonly facingDirection: string;
     readonly animationState: string;
@@ -387,6 +393,7 @@ export class GameApplication {
       get canvasHeight() { return application.#runtime.canvas.height; },
       get reducedMotion() { return application.#runtime.session.getState().reducedMotion; },
       get activeEffects() { return application.#runtime.session.getState().effects.length; },
+      get selectedHeroAbility() { return application.#runtime.session.getState().selectedHeroAbility; },
       get towerRenderer() { return application.#runtime.towerRendererDiagnostics; },
       setGold(amount: number) {
         if (!Number.isFinite(amount) || amount < 0) return false;
@@ -398,6 +405,15 @@ export class GameApplication {
         if (!enemy || !Number.isFinite(amount) || amount < 0) return false;
         enemy.takeDamage(amount, "true");
         return true;
+      },
+      grantHeroXp(amount: number) {
+        return application.#runtime.session.debugGrantHeroXp(amount);
+      },
+      spawnEnemy(type: string, progress?: number) {
+        return application.#runtime.session.debugSpawnEnemy(type, progress).id;
+      },
+      completeLevel() {
+        application.#runtime.session.debugCompleteLevel();
       },
       get hero() {
         const hero = application.#runtime.session.hero;
@@ -412,6 +428,8 @@ export class GameApplication {
           xpToNextLevel: hero.xpToNextLevel,
           skillPoints: hero.skillPoints,
           skills: { ...hero.skills },
+          abilityCooldowns: { ...hero.abilityCooldowns },
+          markedTargetId: hero.markedTargetId,
           auraRadius: hero.auraRadius,
           facingDirection: hero.facingDirection,
           animationState: application.#runtime.heroVisualState.animation,

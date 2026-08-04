@@ -196,7 +196,7 @@ test("schema-v1 settings migrate while an incompatible active game is discarded"
   memory.setItem("river-outpost.active-game", JSON.stringify({ version: 1, flow: {} }));
   const storage = new GameStorage(memory);
   const settings = storage.loadSettings();
-  assert.equal(settings.version, 2);
+  assert.equal(settings.version, 3);
   assert.equal(settings.tutorialSeen, true);
   assert.equal(settings.bestScoreByLevel["level-1"], 1234);
   assert.equal(settings.soundEnabled, false);
@@ -273,11 +273,10 @@ test("Shielded absorbs damage before health and Splitter divides only once", () 
   assert.equal(abilities.spawnOnDeath(children).length, 0);
 });
 
-test("catalog declares four playable campaign levels", () => {
+test("catalog declares eight playable campaign levels", () => {
   assert.deepEqual(levelDefinitions.map((level) => level.id), [
     "level-1", "level-2", "level-3", "level-4",
+    "level-5", "level-6", "level-7", "level-8",
   ]);
-  assert.deepEqual(levelDefinitions.map((level) => level.playable), [
-    true, true, true, true,
-  ]);
+  assert.ok(levelDefinitions.every((level) => level.playable));
 });

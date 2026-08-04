@@ -892,6 +892,35 @@ export class CampaignSession {
     this.#emit();
   }
 
+  /** Development-only shortcut used by deterministic browser smoke scenarios. */
+  debugGrantHeroXp(amount: number): number {
+    const hero = this.#state.hero;
+    if (!hero) throw new CommandValidationError("This level has no controllable hero.");
+    const levels = hero.gainXp(amount);
+    this.#saveGame();
+    this.#emit();
+    return levels;
+  }
+
+  /** Development-only spawn that still uses the level catalog and canonical enemy factory. */
+  debugSpawnEnemy(type: string, progress = 0): EnemyEntity {
+    const safeProgress = Math.max(0, Math.min(0.95, progress));
+    const enemy = this.#createEnemy(type, undefined, undefined, {
+      progress: safeProgress,
+      position: this.path.getPointAt(safeProgress),
+    });
+    this.#state.enemies.push(enemy);
+    this.#emit();
+    return enemy;
+  }
+
+  /** Development-only terminal transition used to keep unlock E2E coverage fast. */
+  debugCompleteLevel(): void {
+    if (this.phase === "victory" || this.phase === "defeat") return;
+    this.#finish("victory");
+    this.#emit();
+  }
+
   setHeroMovementInput(input: HeroMovementInput): void {
     const x = Number.isFinite(input.x) ? Math.max(-1, Math.min(1, input.x)) : 0;
     const y = Number.isFinite(input.y) ? Math.max(-1, Math.min(1, input.y)) : 0;
