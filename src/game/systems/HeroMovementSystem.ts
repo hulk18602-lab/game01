@@ -81,7 +81,8 @@ export class HeroMovementSystem {
       this.#clear(hero);
     }
 
-    hero.moving = false;
+    hero.beginFrame();
+    hero.setMovementState("idle");
     let remainingDistance = hero.speed * deltaSeconds;
     while (remainingDistance > 0 && this.#waypointIndex < this.#waypoints.length) {
       const waypoint = this.#waypoints[this.#waypointIndex]!;
@@ -106,8 +107,7 @@ export class HeroMovementSystem {
         this.#waypointIndex += 1;
         continue;
       }
-      hero.heading = Math.atan2(dy, dx);
-      hero.moving = true;
+      hero.setMovementState(this.#mode === "keyboard" ? "running" : "walking");
       if (distance <= remainingDistance) {
         hero.position = { ...waypoint };
         remainingDistance -= distance;
@@ -123,6 +123,7 @@ export class HeroMovementSystem {
     if (this.#waypointIndex >= this.#waypoints.length && this.#mode === "pointer") {
       this.#clear(hero);
     }
+    if (hero.combatState === "idle") hero.updateFacingFromVelocity();
   }
 
   restoreDestination(
@@ -198,7 +199,7 @@ export class HeroMovementSystem {
     this.#mode = "idle";
     this.#keyboardDirection = "";
     hero.moveTarget = null;
-    hero.moving = false;
+    hero.setMovementState("idle");
   }
 }
 

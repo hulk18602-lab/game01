@@ -49,9 +49,9 @@ const citadelEnemies = Object.freeze([
   "stormLancer",
   "archonBoss",
 ]);
-const rowanStats = Object.freeze({
-  id: "hero-rowan",
-  name: "Rowan",
+const eldrinStats = Object.freeze({
+  id: "hero-eldrin",
+  name: "Eldrin, Warden of the Greenwood",
   speed: 180,
   range: 210,
   damage: 28,
@@ -96,13 +96,13 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
     number: 3,
     playable: true,
     name: "Greenwood Siege",
-    description: "Command Rowan the archer across a sprawling forest battlefield.",
+    description: "Command Eldrin, Warden of the Greenwood, across a sprawling forest battlefield.",
     map: map03 as unknown as MapDefinition,
     waves: level03WaveDefinitions as unknown as readonly WaveDefinition[],
     availableTowerTypes: serpentTowers,
     availableEnemyTypes: serpentEnemies,
     heroConfig: Object.freeze({
-      ...rowanStats,
+      ...eldrinStats,
       spawnCell: Object.freeze({ x: 11, y: 10 }),
     }),
     unlocksLevelId: "level-4",
@@ -119,7 +119,7 @@ export const levelDefinitions: readonly LevelDefinition[] = Object.freeze([
     availableTowerTypes: serpentTowers,
     availableEnemyTypes: citadelEnemies,
     heroConfig: Object.freeze({
-      ...rowanStats,
+      ...eldrinStats,
       spawnCell: Object.freeze({ x: 12, y: 11 }),
     }),
     unlocksLevelId: null,

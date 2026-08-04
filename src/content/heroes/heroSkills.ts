@@ -37,7 +37,7 @@ export const heroSkillDefinitions: Readonly<Record<HeroSkillId, HeroSkillDefinit
   keenEye: define({
     id: "keenEye",
     name: "Keen Eye",
-    description: "Extends Rowan's attack range.",
+    description: "Extends Eldrin's attack range.",
     levels: [
       { requiredHeroLevel: 2, rangeBonus: 35, bonusText: "+35 range" },
       { requiredHeroLevel: 4, rangeBonus: 70, bonusText: "+70 range" },
@@ -47,7 +47,7 @@ export const heroSkillDefinitions: Readonly<Record<HeroSkillId, HeroSkillDefinit
   rapidVolley: define({
     id: "rapidVolley",
     name: "Rapid Volley",
-    description: "Improves Rowan's arrow fire rate.",
+    description: "Improves Eldrin's arrow fire rate.",
     levels: [
       { requiredHeroLevel: 2, fireRateBonus: 0.12, bonusText: "+12% fire rate" },
       { requiredHeroLevel: 5, fireRateBonus: 0.25, bonusText: "+25% fire rate" },

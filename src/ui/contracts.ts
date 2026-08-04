@@ -98,9 +98,14 @@ export interface HeroView {
   readonly damage: number;
   readonly range: number;
   readonly fireRate: number;
+  readonly speed: number;
   readonly target: string | null;
   readonly skillPoints: number;
   readonly auraRadius: number;
+  readonly portraitUrl: string;
+  readonly visualTier: string;
+  readonly activeSkills: readonly string[];
+  readonly description: string;
 }
 
 export interface HeroSkillView {
